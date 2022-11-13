@@ -10,3 +10,5 @@ if __name__ == '__main__':
 
     while True:
         print('Server is ready to receive file')
+
+        connection_socket, addr = server_socket.accept()

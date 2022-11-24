@@ -59,31 +59,30 @@ if __name__ == '__main__':
 
                 #! Send file data
                 file = open(filename, 'r')
-                data = file.read()
-                msg = f'CONTENTS;{data}'
-                client_socket.send(msg.encode())
+                data = file.read(1024)
+                while data:
+                    msg = f'CONTENTS;{data}'
+                    client_socket.send(msg.encode())
+                    response = client_socket.recv(1024).decode()
+                    data = file.read(1024)
+
                 #* Receive response
-                response = client_socket.recv(1024).decode()
                 print(response)
 
                 #! Finish sending 
-                msg = f'FINISH;1'
+                msg = f'FINISH;finished'
                 client_socket.send(msg.encode())
                 #* Receive response
                 resonse = client_socket.recv(1024).decode()
                 print(response)
 
-                # Send size of file 
-                # filesize = os.stat(filename)
-                # client_socket.send(filesize.encode())
+        #! Finished sending everything
+        msg = f'CLOSE;close connection'
+        client_socket.send(msg.encode())
+        #* Receive response
+        resonse = client_socket.recv(1024).decode()
+        print(response)
 
-                
-
-                # while data:
-                #     client_socket.send(data)
-                #     data = file.read(1024)
-                # file.close()
-                # client_socket.close()
     except:
         print('Could not connect to server ❌')
         print('Make sure the server name/IP is correct, and the server is running')

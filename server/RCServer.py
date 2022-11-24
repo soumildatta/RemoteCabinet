@@ -22,13 +22,18 @@ if __name__ == '__main__':
 
         while True:
             #! Receive item 
-            item = (connection_socket.recv(1024).decode())
-            print(item)
+            message = (connection_socket.recv(1024).decode())
+            print(message)
+
             try:
-                type, item = item.split(';')
+                # Only split by the first semi colon
+                type, item = message.split(';', 1)
             except:
-                print('EXCEPTION')
-                print(item)
+                #! Not enough values to unpack
+                # print('EXCEPTION')
+                # print(item)
+                print()
+
             # connection_socket.send(f'FROM SERVER: Receiving file {item}'.encode())
 
             if type == 'FILENAME':
@@ -42,9 +47,10 @@ if __name__ == '__main__':
                 connection_socket.send(f'FROM SERVER: Writing to file'.encode())
             
             if type == 'FINISH':
-                file.close()
                 #* Send resonse
-                connection_socket.send(f'FROM SERVER: {item}'.encode())
+                connection_socket.send(f'FROM SERVER: Finished writing to file'.encode())
+                file.close()
+                # print("FILE HAS BEEN CLOSED")
 
             if type == 'CLOSE':
                 connection_socket.send(f'FROM SERVER: FINSHED'.encode())

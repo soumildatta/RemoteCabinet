@@ -13,7 +13,7 @@ def main():
 
     while True:
         data = client.recv(packet_size).decode()
-        cmd, msg = data.split('@', 1)
+        cmd, msg = data.split('@')
 
         if cmd == 'OK':
             print(msg)
@@ -25,7 +25,7 @@ def main():
         data = data.split(" ")
         cmd = data[0]
 
-        elif cmd == 'LOGOUT':
+        if cmd == 'LOGOUT':
             client.send(cmd.encode())
             break
 
@@ -34,13 +34,19 @@ def main():
 
         elif cmd == 'UPLOAD':
             ## UPLOAD@filename@text
-            path = data[1]
-            with open(path, 'r') as f:
-                text = f.read()
+            path = 'client_data'
+            files = os.listdir(path)
+            client.send(f'LENGTH@{len(files)}'.encode())
             
-            filename = path.split('/')[-1]
-            sendData = f'{cmd}@{filename}@{text}'
-            client.send(sendData.encode())
+            for file in files:
+                print(file)
+
+                with open(path, 'r') as f:
+                    text = f.read()
+            
+                filename = path.split('/')[-1]
+                sendData = f'{cmd}@{filename}@{text}'
+                client.send(sendData.encode())
 
         elif cmd == 'DELETE':
             client.send(f'{cmd}@{data[1]}'.encode())

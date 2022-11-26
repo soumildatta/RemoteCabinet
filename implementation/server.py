@@ -16,7 +16,7 @@ def handle_client(conn, addr):
         data = data.split('@')
         cmd = data[0]
         
-        elif cmd == 'LOGOUT':
+        if cmd == 'LOGOUT':
             break
 
         elif cmd == 'LIST':
@@ -28,14 +28,19 @@ def handle_client(conn, addr):
                 sendData += '\n'.join(f for f in files)
             conn.send(sendData.encode())
 
-        elif cmd == 'UPLOAD':
-            name = data[1]
-            text = data[2]
-            filepath = os.path.join(server_path, name)
-            with open(filepath, 'w') as f:
-                f.write(text)
-            sendData = 'OK@File uploaded.'
-            conn.send(sendData.encode())
+        elif cmd == 'LENGTH':
+            length = int(data[1])
+
+            for i in range(0, length):
+                data = conn.recv(packet_size).decode()
+                data = data.split('@')
+                name = data[1]
+                text = data[2]
+                filepath = os.path.join(server_path, name)
+                with open(filepath, 'w') as f:
+                    f.write(text)
+                sendData = 'OK@File uploaded.'
+                conn.send(sendData.encode())
 
         elif cmd == 'DELETE':
             files = os.listdir(server_path)

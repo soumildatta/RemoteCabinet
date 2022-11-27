@@ -43,6 +43,20 @@ if __name__ == '__main__':
             client_socket.send(f'FILENAME@{file}'.encode())
             print(client_socket.recv(1024).decode())
 
+            #! Start sending file contents
+            file = open(file, 'rb')
+            data = file.read(1024)
+            while data:
+                msg = f'DATA@{data}'
+                client_socket.send(msg.encode())
+                print(client_socket.recv(1024).decode())
+                data = file.read(1024)
+
+            #! Send end signal
+            msg = 'END@Finished sending file'
+            client_socket.send(msg.encode())
+            print(client_socket.recv(1024).decode())
+
         done_msg = f'DONE@Finished transferring'
         client_socket.send(done_msg.encode())
 

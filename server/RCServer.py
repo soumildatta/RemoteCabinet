@@ -14,13 +14,17 @@ def clientHandler(conn, addr):
     while True:
         data = conn.recv(packet_size).decode()
         conn.send(f'Received command {data}'.encode())
-        # print(data)
+        print(data)
         splitData = data.split('@')
         cmd = splitData[0]
         contents = splitData[1]
 
         if cmd == 'FILENAME':
-            print(contents)
+            file = open(contents, 'w')
+        elif cmd == 'DATA':
+            file.write(contents)
+        elif cmd == 'END':
+            file.close()
         elif cmd == 'DONE':
             print(splitData[1])
             conn.send(f'Server has disconnected after completion'.encode())
@@ -28,6 +32,7 @@ def clientHandler(conn, addr):
         else:
             pass
 
+    print(f'Client {addr} disconnected')
 
 
 if __name__ == '__main__':

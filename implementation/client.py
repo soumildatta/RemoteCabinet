@@ -1,58 +1,31 @@
-import os 
-from socket import *
-import threading
+import socket
+import os
 
-server_port = 12001
-packet_size = 1024
-server_addr = ('', server_port)
-client_path = 'client_data'
+s = socket.socket()
+host = socket.gethostname()
+port = 12000
+s.connect((host, port))
+path = "client_data"
+directory = os.listdir(path)
 
-def main():
-    client = socket(AF_INET, SOCK_STREAM)
-    client.connect(server_addr)
+for files in directory:
+    print(files)
+    filename = files
+    size = len(filename)
+    size = bin(size)[2:].zfill(16) # encode filename size as 16 bit binary
+    s.send(size.encode())
+    s.send(filename.encode())
 
-    while True:
-        data = client.recv(packet_size).decode()
-        cmd, msg = data.split('@')
+    filename = os.path.join(path,filename)
+    filesize = os.path.getsize(filename)
+    filesize = bin(filesize)[2:].zfill(32) # encode filesize as 32 bit binary
+    s.send(filesize.encode())
 
-        if cmd == 'OK':
-            print(msg)
-        elif cmd == 'DISCONNECTED':
-            print(msg)
-            break
-    
-        data = input("> ")
-        data = data.split(" ")
-        cmd = data[0]
+    file_to_send = open(filename, 'rb')
 
-        if cmd == 'LOGOUT':
-            client.send(cmd.encode())
-            break
+    l = file_to_send.read()
+    s.sendall(l)
+    file_to_send.close()
+    print('File Sent')
 
-        elif cmd == 'LIST':
-            client.send(cmd.encode())
-
-        elif cmd == 'UPLOAD':
-            ## UPLOAD@filename@text
-            path = 'client_data'
-            files = os.listdir(path)
-            client.send(f'LENGTH@{len(files)}'.encode())
-            
-            for file in files:
-                print(file)
-
-                with open(path, 'r') as f:
-                    text = f.read()
-            
-                filename = path.split('/')[-1]
-                sendData = f'{cmd}@{filename}@{text}'
-                client.send(sendData.encode())
-
-        elif cmd == 'DELETE':
-            client.send(f'{cmd}@{data[1]}'.encode())
-
-    print('Disconnected from server')
-    client.close()
-
-if __name__ == '__main__':
-    main()
+s.close()

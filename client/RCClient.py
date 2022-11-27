@@ -9,19 +9,40 @@ import sys
 server_port = 12000
 packet_size = 1024
 
+def handleSendFile(fileList, client_socket):
+    for file in fileList:
+        print(f'Sending {file}')
+
+        # send filename size
+        size = len(file)
+        # encode size as 16 bit binary
+        size = bin(size)[2:].zfill(16)
+        client_socket.send(size.encode())
+        client_socket.send(file.encode())
+
+        filename = os.path.join(current_dir, file)
+        filesize = os.path.getsize(file)
+        filesize = bin(filesize)[2:].zfill(32)
+        client_socket.send(filesize.encode())
+
+        fileOpened = open(filename, 'rb')
+
+        data = fileOpened.read()
+        client_socket.sendall(data)
+        fileOpened.close()
+        print(f'File {file} sent')
+
 if __name__ == '__main__':
     #!!!!!! REINSTATE USER INPUT LATER --- REMOVED FOR TESTING
     # server_name = input('Input the server IP address/name: ')
     server_name = 'localhost'
     #!!!!!! FIX LINES ABOVE 
     
-
     # Obtain all items from folder 
     # current_dir = os.getcwd()
     current_dir = './'
     dir_list = os.listdir(current_dir)
     dir_list.remove('RCClient.py')
-    print(dir_list)
 
     # TODO: Handle folder transfer later
 
@@ -35,33 +56,8 @@ if __name__ == '__main__':
         conn_msg = client_socket.recv(packet_size).decode()
         print(conn_msg)
 
-        print(dir_list)
-
-        for file in dir_list:
-            #! Send filename 
-            print(f'Sending file {file}')
-            client_socket.send(f'FILENAME@{file}'.encode())
-            print(client_socket.recv(1024).decode())
-
-            #! Start sending file contents
-            file = open(file, 'rb')
-            data = file.read(1024)
-            while data:
-                msg = f'DATA@{data}'
-                client_socket.send(msg.encode())
-                print(client_socket.recv(1024).decode())
-                data = file.read(1024)
-
-            #! Send end signal
-            msg = 'END@Finished sending file'
-            client_socket.send(msg.encode())
-            print(client_socket.recv(1024).decode())
-
-        done_msg = f'DONE@Finished transferring'
-        client_socket.send(done_msg.encode())
-
-        print()
-        print(client_socket.recv(1024).decode())
+        # Send the files
+        handleSendFile(dir_list, client_socket)
 
     except:
         print('Something went wrong ❌')

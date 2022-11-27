@@ -12,25 +12,30 @@ def clientHandler(conn, addr):
     conn.send(f'100@Connection with server established'.encode())
 
     while True:
-        data = conn.recv(packet_size).decode()
-        conn.send(f'Received command {data}'.encode())
-        print(data)
-        splitData = data.split('@')
-        cmd = splitData[0]
-        contents = splitData[1]
+        size = conn.recv(16).decode()
+        if not size:
+            # stopped receiving
+            break 
 
-        if cmd == 'FILENAME':
-            file = open(contents, 'w')
-        elif cmd == 'DATA':
-            file.write(contents)
-        elif cmd == 'END':
-            file.close()
-        elif cmd == 'DONE':
-            print(splitData[1])
-            conn.send(f'Server has disconnected after completion'.encode())
-            break
-        else:
-            pass
+        size = int(size, 2)
+        filename = conn.recv(size).decode()
+
+        filesize = conn.recv(32).decode()
+        filesize = int(filesize, 2)
+
+        file = open(filename, 'wb')
+
+        chunksize = packet_size
+        while filesize > 0:
+            if filesize < chunksize:
+                chunksize = filesize
+            
+            data = conn.recv(chunksize)
+            file.write(data)
+            filesize -= len(data)
+
+        file.close()
+        print(f'File {filename} received successfully')
 
     print(f'Client {addr} disconnected')
 

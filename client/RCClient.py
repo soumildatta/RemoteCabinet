@@ -6,7 +6,7 @@ import sys
 
 # from utilities import testPrint
 
-global server_port = 12000
+server_port = 12000
 packet_size = 1024
 current_dir = './'
 
@@ -37,7 +37,6 @@ def handleReceiveFiles(conn):
     while True:
         # Receive file name size
         size = conn.recv(16).decode()
-        print(size)
 
         # stop receiving if nothing is being sent anymore
         if not size or size == 'FINISHED':
@@ -64,6 +63,41 @@ def handleReceiveFiles(conn):
         conn.send('RECV'.encode())
         print(f'File {filename} received successfully')
 
+def handleSyncReceiveFiles(conn):
+    current_files = os.listdir(current_dir)
+
+    while True:
+        # Receive file name size
+        size = conn.recv(16).decode()
+
+        # stop receiving if nothing is being sent anymore
+        if not size or size == 'FINISHED':
+            break 
+
+        size = int(size, 2)
+        filename = conn.recv(size).decode()
+
+        filesize = conn.recv(32).decode()
+        filesize = int(filesize, 2)
+
+        file = open(filename, 'wb')
+
+        chunksize = packet_size
+        while filesize > 0:
+            if filesize < chunksize:
+                chunksize = filesize
+            
+            data = conn.recv(chunksize)
+            file.write(data)
+            filesize -= len(data)
+
+        file.close()
+        conn.send('RECV'.encode())
+
+        if filename not in current_files:
+            print(f'File {filename} received successfully')
+
+
 if __name__ == '__main__':
     #!!!!!! REINSTATE USER INPUT LATER --- REMOVED FOR TESTING
     # server_name = input('Input the server IP address/name: ')
@@ -80,12 +114,18 @@ if __name__ == '__main__':
     # try:
     client_socket = socket(AF_INET, SOCK_STREAM)
     client_socket.connect((server_name, server_port))
-    print('Successful connection to server ✅')
 
     # TODO: Save server name for later easy access
 
     conn_msg = client_socket.recv(packet_size).decode()
-    print(conn_msg)
+    
+    if conn_msg.split('@')[0] == '100':
+        print('Successful connection to server ✅')
+    else:
+        print('Something went wrong ❌')
+        print('Make sure the server name/IP is correct, and the server is running')
+        exit(0)
+
 
     #! At this point, the client is connected to server
 
@@ -96,21 +136,21 @@ if __name__ == '__main__':
     #! IMPLEMENTATION WANTED IS NOT FULLY OPERATIONAL
     # For right now, sending command 02 makes server send all files so do that for syncing 
     client_socket.send('02'.encode())
-    handleReceiveFiles(client_socket)
+    handleSyncReceiveFiles(client_socket)
 
 
 
 
-    command = input('=> ')
-    # Commands: UPLOAD (01), GET (02)
+    # command = input('=> ')
+    # # Commands: UPLOAD (01), GET (02)
 
-    # Send the files
-    if command == 'UPLOAD':
-        client_socket.send('01'.encode())
-        handleSendFile(dir_list, client_socket)
-    elif command == 'GET':
-        client_socket.send('02'.encode())
-        handleReceiveFiles(client_socket)
+    # # Send the files
+    # if command == 'UPLOAD':
+    #     client_socket.send('01'.encode())
+    #     handleSendFile(dir_list, client_socket)
+    # elif command == 'GET':
+    #     client_socket.send('02'.encode())
+    #     handleReceiveFiles(client_socket)
 
     # except:
     #     print('Something went wrong ❌')

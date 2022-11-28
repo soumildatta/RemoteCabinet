@@ -8,6 +8,7 @@ import sys
 
 server_port = 12000
 packet_size = 1024
+current_dir = './'
 
 def handleSendFile(fileList, client_socket):
     for file in fileList:
@@ -32,6 +33,37 @@ def handleSendFile(fileList, client_socket):
         fileOpened.close()
         print(f'File {file} sent')
 
+def handleReceiveFiles(conn):
+    while True:
+        # Receive file name size
+        size = conn.recv(16).decode()
+        print(size)
+
+        if not size or size == 'FINISHED':
+            # stop receiving if nothing is being sent anymore
+            break 
+
+        size = int(size, 2)
+        filename = conn.recv(size).decode()
+
+        filesize = conn.recv(32).decode()
+        filesize = int(filesize, 2)
+
+        file = open(filename, 'wb')
+
+        chunksize = packet_size
+        while filesize > 0:
+            if filesize < chunksize:
+                chunksize = filesize
+            
+            data = conn.recv(chunksize)
+            file.write(data)
+            filesize -= len(data)
+
+        file.close()
+        conn.send('RECV'.encode())
+        print(f'File {filename} received successfully')
+
 if __name__ == '__main__':
     #!!!!!! REINSTATE USER INPUT LATER --- REMOVED FOR TESTING
     # server_name = input('Input the server IP address/name: ')
@@ -40,26 +72,36 @@ if __name__ == '__main__':
     
     # Obtain all items from folder 
     # current_dir = os.getcwd()
-    current_dir = './'
     dir_list = os.listdir(current_dir)
     dir_list.remove('RCClient.py')
 
     # TODO: Handle folder transfer later
 
-    try:
-        client_socket = socket(AF_INET, SOCK_STREAM)
-        client_socket.connect((server_name, server_port))
-        print('Successful connection to server ✅')
+    # try:
+    client_socket = socket(AF_INET, SOCK_STREAM)
+    client_socket.connect((server_name, server_port))
+    print('Successful connection to server ✅')
 
-        # TODO: Save server name for later easy access
+    # TODO: Save server name for later easy access
 
-        conn_msg = client_socket.recv(packet_size).decode()
-        print(conn_msg)
+    conn_msg = client_socket.recv(packet_size).decode()
+    print(conn_msg)
 
-        # Send the files
+    #! At this point, the client is connected to server
+
+    command = input('=> ')
+
+    # Commands: UPLOAD (01)
+
+    # Send the files
+    if command == 'UPLOAD':
+        client_socket.send('01'.encode())
         handleSendFile(dir_list, client_socket)
+    elif command == 'GET':
+        client_socket.send('02'.encode())
+        handleReceiveFiles(client_socket)
 
-    except:
-        print('Something went wrong ❌')
-        print('Make sure the server name/IP is correct, and the server is running')
+    # except:
+    #     print('Something went wrong ❌')
+    #     print('Make sure the server name/IP is correct, and the server is running')
 

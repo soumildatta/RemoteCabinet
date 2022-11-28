@@ -6,7 +6,7 @@ import sys
 
 # from utilities import testPrint
 
-server_port = 12000
+global server_port = 12000
 packet_size = 1024
 current_dir = './'
 
@@ -39,8 +39,8 @@ def handleReceiveFiles(conn):
         size = conn.recv(16).decode()
         print(size)
 
+        # stop receiving if nothing is being sent anymore
         if not size or size == 'FINISHED':
-            # stop receiving if nothing is being sent anymore
             break 
 
         size = int(size, 2)
@@ -89,9 +89,20 @@ if __name__ == '__main__':
 
     #! At this point, the client is connected to server
 
-    command = input('=> ')
 
-    # Commands: UPLOAD (01)
+
+
+    # TODO: Automatic initial synchronization at this point~
+    #! IMPLEMENTATION WANTED IS NOT FULLY OPERATIONAL
+    # For right now, sending command 02 makes server send all files so do that for syncing 
+    client_socket.send('02'.encode())
+    handleReceiveFiles(client_socket)
+
+
+
+
+    command = input('=> ')
+    # Commands: UPLOAD (01), GET (02)
 
     # Send the files
     if command == 'UPLOAD':

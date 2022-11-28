@@ -13,7 +13,7 @@ def handleReceiveFiles(conn):
         # Receive file name size
         size = conn.recv(16).decode()
         
-        if not size:
+        if not size or size == 'FINISHED':
             # stop receiving if nothing is being sent anymore
             break 
 
@@ -68,17 +68,21 @@ def clientHandler(conn, addr):
     print(f'Client {addr} connected')
     conn.send(f'100@Connection with server established'.encode())
 
-    # Receive command for what to do
-    command = conn.recv(2).decode()
+    while True:
+        # Receive command for what to do
+        command = conn.recv(2).decode()
 
-    # RECEIVE FILES FROM CLIENT
-    if command == '01':
-        handleReceiveFiles(conn)
-    elif command == '02':
-        dir_list = os.listdir(current_dir)
-        dir_list.remove('RCServer.py')
-        print(dir_list)
-        handleSendFile(dir_list, conn)
+        # RECEIVE FILES FROM CLIENT
+        if command == '01':
+            handleReceiveFiles(conn)
+        # SEND FILES TO CLIENT
+        elif command == '02':
+            dir_list = os.listdir(current_dir)
+            dir_list.remove('RCServer.py')
+            print(dir_list)
+            handleSendFile(dir_list, conn)
+        elif command == '11':
+            break
 
     print(f'Client {addr} disconnected')
 

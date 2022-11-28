@@ -10,7 +10,9 @@ server_port = 12000
 packet_size = 1024
 current_dir = './'
 
-def handleSendFile(fileList, client_socket):
+syncedFiles = []
+
+def handleSendFiles(fileList, client_socket):
     for file in fileList:
         print(f'Sending {file}')
 
@@ -32,6 +34,32 @@ def handleSendFile(fileList, client_socket):
         client_socket.sendall(data)
         fileOpened.close()
         print(f'File {file} sent')
+
+def handleSyncSendFiles(fileList, client_socket):
+    for file in fileList:
+        if file not in syncedFiles:
+            print(f'Sending {file}')
+
+            # send filename size
+            size = len(file)
+            # encode size as 16 bit binary
+            size = bin(size)[2:].zfill(16)
+            client_socket.send(size.encode())
+            client_socket.send(file.encode())
+
+            filename = os.path.join(current_dir, file)
+            filesize = os.path.getsize(file)
+            filesize = bin(filesize)[2:].zfill(32)
+            client_socket.send(filesize.encode())
+
+            fileOpened = open(filename, 'rb')
+
+            data = fileOpened.read()
+            client_socket.sendall(data)
+            fileOpened.close()
+            print(f'File {file} sent')
+    
+    client_socket.send('FINISHED'.encode())
 
 def handleReceiveFiles(conn):
     while True:
@@ -94,6 +122,8 @@ def handleSyncReceiveFiles(conn):
         file.close()
         conn.send('RECV'.encode())
 
+        syncedFiles.append(filename)
+
         if filename not in current_files:
             print(f'File {filename} received successfully')
 
@@ -138,8 +168,16 @@ if __name__ == '__main__':
     client_socket.send('02'.encode())
     handleSyncReceiveFiles(client_socket)
 
+    client_socket.send('01'.encode())
+    handleSyncSendFiles(dir_list, client_socket)
 
-
+    try:
+        while True:
+            something = 2
+    except KeyboardInterrupt:
+        client_socket.send('11'.encode())
+        print('Disconnected from server')
+        client_socket.close()
 
     # command = input('=> ')
     # # Commands: UPLOAD (01), GET (02)

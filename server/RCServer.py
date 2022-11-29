@@ -101,7 +101,6 @@ def handleReceiveFileUpdate(conn):
 def handleSendFile(fileList, client_socket):
     for file in fileList:
         directory = "."
-        print(file)
 
         if len(file) > 1:
             for i in range(0, len(file) - 1):
@@ -129,7 +128,6 @@ def handleSendFile(fileList, client_socket):
         client_socket.send(file.encode())
 
         filename = os.path.join(directory, file)
-        print(filename)
         filesize = os.path.getsize(filename)
         filesize = bin(filesize)[2:].zfill(32)
         client_socket.send(filesize.encode())

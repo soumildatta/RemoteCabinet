@@ -6,7 +6,7 @@ import sys
 
 # from utilities import testPrint
 
-server_port = 12000
+server_port = 12001
 packet_size = 1024
 current_dir = './'
 
@@ -127,6 +127,36 @@ def handleSyncReceiveFiles(conn):
         if filename not in current_files:
             print(f'File {filename} received successfully')
 
+def handleFileDeletion(file, conn):
+    size = len(file)
+    size = bin(size)[2:].zfill(16)
+    client_socket.send(size.encode())
+    client_socket.send(file.encode())
+
+    print(f'File {file} deleted from server')
+
+def handleSendFileUpdate(file, conn):
+    print(f'Sending {file}')
+
+    # send filename size
+    size = len(file)
+    # encode size as 16 bit binary
+    size = bin(size)[2:].zfill(16)
+    client_socket.send(size.encode())
+    client_socket.send(file.encode())
+
+    filename = os.path.join(current_dir, file)
+    filesize = os.path.getsize(file)
+    filesize = bin(filesize)[2:].zfill(32)
+    client_socket.send(filesize.encode())
+
+    fileOpened = open(filename, 'rb')
+
+    data = fileOpened.read()
+    client_socket.sendall(data)
+    fileOpened.close()
+    print(f'File {file} sent')
+
 
 if __name__ == '__main__':
     #!!!!!! REINSTATE USER INPUT LATER --- REMOVED FOR TESTING
@@ -160,8 +190,6 @@ if __name__ == '__main__':
     #! At this point, the client is connected to server
 
 
-
-
     # TODO: Automatic initial synchronization at this point~
     #! IMPLEMENTATION WANTED IS NOT FULLY OPERATIONAL
     # For right now, sending command 02 makes server send all files so do that for syncing 
@@ -172,25 +200,26 @@ if __name__ == '__main__':
     handleSyncSendFiles(dir_list, client_socket)
 
     try:
+        old = os.listdir(current_dir)
+        # print(old)
+
         while True:
-            something = 2
+            new = os.listdir(current_dir)
+            if len(new) > len(old):
+                client_socket.send('04'.encode())
+                newfile = list(set(new) - set(old))
+                print(newfile[0])
+                handleSendFileUpdate(newfile[0], client_socket)
+                old = new
+            elif len(new) < len(old):
+                # file has been deleted
+                client_socket.send('03'.encode())
+                deleteFilename = list(set(old) - set(new))[0]
+                handleFileDeletion(deleteFilename, client_socket)
+                old = new
+            else:
+                continue
     except KeyboardInterrupt:
         client_socket.send('11'.encode())
         print('Disconnected from server')
         client_socket.close()
-
-    # command = input('=> ')
-    # # Commands: UPLOAD (01), GET (02)
-
-    # # Send the files
-    # if command == 'UPLOAD':
-    #     client_socket.send('01'.encode())
-    #     handleSendFile(dir_list, client_socket)
-    # elif command == 'GET':
-    #     client_socket.send('02'.encode())
-    #     handleReceiveFiles(client_socket)
-
-    # except:
-    #     print('Something went wrong ❌')
-    #     print('Make sure the server name/IP is correct, and the server is running')
-

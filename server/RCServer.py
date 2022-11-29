@@ -4,7 +4,7 @@ from socket import *
 import os 
 import threading
 
-server_port = 12000
+server_port = 12001
 packet_size = 1024
 current_dir = './'
 
@@ -37,6 +37,34 @@ def handleReceiveFiles(conn):
         file.close()
         print(f'File {filename} received successfully')
 
+def handleReceiveFileUpdate(conn):
+    size = conn.recv(16).decode()
+    
+    # if not size or size == 'FINISHED':
+    #     # stop receiving if nothing is being sent anymore
+    #     break 
+
+    size = int(size, 2)
+    filename = conn.recv(size).decode()
+
+    filesize = conn.recv(32).decode()
+    filesize = int(filesize, 2)
+
+    file = open(filename, 'wb')
+
+    chunksize = packet_size
+    while filesize > 0:
+        if filesize < chunksize:
+            chunksize = filesize
+        
+        data = conn.recv(chunksize)
+        file.write(data)
+        filesize -= len(data)
+
+    file.close()
+    print(f'File {filename} received successfully')
+
+
 def handleSendFile(fileList, client_socket):
     for file in fileList:
         print(f'Sending {file}')
@@ -63,6 +91,20 @@ def handleSendFile(fileList, client_socket):
     
     client_socket.send('FINISHED'.encode())
 
+def handleFileDeletion(conn):
+    # Receive file name size
+    size = conn.recv(16).decode()
+    
+    # if not size or size == 'FINISHED':
+    #     # stop receiving if nothing is being sent anymore
+    #     break
+
+    size = int(size, 2)
+    filename = conn.recv(size).decode()
+
+    os.remove(filename)
+
+
 #! Main thread function
 def clientHandler(conn, addr):
     print(f'Client {addr} connected')
@@ -81,22 +123,34 @@ def clientHandler(conn, addr):
             dir_list.remove('RCServer.py')
             print(dir_list)
             handleSendFile(dir_list, conn)
+        elif command == '03':
+            print('DELETING FILE')
+            handleFileDeletion(conn)
+        elif command == '04':
+            print('RECEIVING NEW FILE')
+            handleReceiveFileUpdate(conn)
         elif command == '11':
             break
 
     print(f'Client {addr} disconnected')
+    conn.close()
 
 
 if __name__ == '__main__':
+
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.bind(('', server_port))
     server_socket.listen(1)
 
     print('Server started ✅')
 
-    while True:
-        conn, addr = server_socket.accept()
-        thread = threading.Thread(target=clientHandler, args=(conn, addr))
-        thread.start()
-        #! TEMPPORARY 
-        # clientHandler(conn, addr)
+    try:
+        while True:
+            conn, addr = server_socket.accept()
+            thread = threading.Thread(target=clientHandler, args=(conn, addr))
+            thread.start()
+            #! TEMPPORARY 
+            # clientHandler(conn, addr)
+    except KeyboardInterrupt:
+        server_socket.close()
+        print('Server has been stopped')

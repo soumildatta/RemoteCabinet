@@ -1,5 +1,6 @@
 # Author: Soumil Datta
 
+from inspect import currentframe
 from socket import *
 import os
 import sys
@@ -23,7 +24,7 @@ def calcNewModTimes(file_list):
 
     return newModTimes
 
-def handleSyncSendFiles(fileList, client_socket):
+def handleSyncSendFiles(fileList, client_socket):    
     for file in fileList:
         directory = "."
         # print(file)
@@ -55,7 +56,6 @@ def handleSyncSendFiles(fileList, client_socket):
             client_socket.send(file.encode())
 
             filename = os.path.join(directory, file)
-            print(filename)
             filesize = os.path.getsize(filename)
             filesize = bin(filesize)[2:].zfill(32)
             client_socket.send(filesize.encode())
@@ -70,10 +70,9 @@ def handleSyncSendFiles(fileList, client_socket):
     client_socket.send('FINISHED'.encode())
 
 def handleSyncReceiveFiles(conn):
-    current_files = os.listdir(current_dir)
-
+    current_files = listFiles2(current_dir)
     directory = "."
-
+    
     while True:
         # Receive file name size
         size = conn.recv(21).decode()
@@ -88,11 +87,11 @@ def handleSyncReceiveFiles(conn):
         if cmd == 'FOLD':
             foldername = conn.recv(size).decode()
             # Skip if the folder already exists
-            if not os.path.exists(foldername):
-                os.mkdir(foldername)
-                directory = os.path.join(directory, foldername)
+            directory = os.path.join(directory, foldername)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
             else:
-                directory = os.path.join(directory, foldername)
+                # directory = os.path.join(directory, foldername)
                 continue
 
         elif cmd == 'FILE':
@@ -114,11 +113,11 @@ def handleSyncReceiveFiles(conn):
                 filesize -= len(data)
 
             file.close()
-            print(f'File {filename} received successfully')
 
-            syncedFiles.append(filename)
+            syncedFiles.append(filename.split('/')[-1])
 
-            if filename not in current_files:
+            if filename[2:] not in current_files:
+                print(filename, current_files)
                 print(f'File {filename} received successfully')
 
 def handleFileDeletion(file, conn):
@@ -165,7 +164,6 @@ def handleSendFileUpdate(file, conn):
         filesize = os.path.getsize(filename)
         filesize = bin(filesize)[2:].zfill(32)
         client_socket.send(filesize.encode())
-        print('THIS IS WHAT IS BEING OPENED ',filename)
         fileOpened = open(filename, 'rb')
 
         data = fileOpened.read()
@@ -246,7 +244,6 @@ if __name__ == '__main__':
 
     try:
         old = listFiles2(current_dir)
-        # print(old)
 
         while True:
             new = listFiles2(current_dir)
@@ -263,7 +260,6 @@ if __name__ == '__main__':
                 if len(new) > len(old):
                     client_socket.send('04'.encode())
                     newfile = list(set(new) - set(old))[0]
-                    # print(newfile[0])
                     handleSendFileUpdate(newfile, client_socket)
                     old = new
                 # Handle file deleted from directory
@@ -276,7 +272,6 @@ if __name__ == '__main__':
                 # Handle file modified in directory
                 else:
                     updateFile = list(dict2 - dict1)[0][0]
-                    print('Modified: ', updateFile)
                     client_socket.send('04'.encode())
                     handleSendFileUpdate(updateFile, client_socket)
 

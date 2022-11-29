@@ -25,11 +25,11 @@ def handleReceiveFiles(conn):
 
         if cmd == 'FOLD':
             foldername = conn.recv(size).decode()
-            if not os.path.exists(foldername):
-                os.mkdir(foldername)
-                directory = os.path.join(directory, foldername)
+            directory = os.path.join(directory, foldername)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
             else:
-                directory = os.path.join(directory, foldername)
+                # directory = os.path.join(directory, foldername)
                 continue
 
         elif cmd == 'FILE':
@@ -69,12 +69,12 @@ def handleReceiveFileUpdate(conn):
 
         if cmd == 'FOLD':
             foldername = conn.recv(size).decode()
-            if not os.path.exists(foldername):
-                os.mkdir(foldername)
-                directory = os.path.join(directory, foldername)
+            directory = os.path.join(directory, foldername)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
                 # print(directory)
             else:
-                directory = os.path.join(directory, foldername)
+                # directory = os.path.join(directory, foldername)
                 continue
 
         elif cmd == 'FILE':

@@ -3,77 +3,134 @@
 from socket import *
 import os 
 import threading
+from glob import glob
 
 server_port = 12001
 packet_size = 1024
 current_dir = './'
 
 def handleReceiveFiles(conn):
+    directory = "."
+
     while True:
         # Receive file name size
-        size = conn.recv(16).decode()
+        size = conn.recv(21).decode()
         
         if not size or size == 'FINISHED':
             # stop receiving if nothing is being sent anymore
             break 
-
+        
+        cmd, size = size.split('@')
         size = int(size, 2)
-        filename = conn.recv(size).decode()
 
-        filesize = conn.recv(32).decode()
-        filesize = int(filesize, 2)
+        if cmd == 'FOLD':
+            foldername = conn.recv(size).decode()
+            if not os.path.exists(foldername):
+                os.mkdir(foldername)
+                directory = os.path.join(directory, foldername)
+            else:
+                directory = os.path.join(directory, foldername)
+                continue
 
-        file = open(filename, 'wb')
+        elif cmd == 'FILE':
+            filename = conn.recv(size).decode()
+            filename = os.path.join(directory, filename)
 
-        chunksize = packet_size
-        while filesize > 0:
-            if filesize < chunksize:
-                chunksize = filesize
-            
-            data = conn.recv(chunksize)
-            file.write(data)
-            filesize -= len(data)
+            filesize = conn.recv(32).decode()
+            filesize = int(filesize, 2)
 
-        file.close()
-        print(f'File {filename} received successfully')
+            file = open(filename, 'wb')
+
+            chunksize = packet_size
+            while filesize > 0:
+                if filesize < chunksize:
+                    chunksize = filesize
+                
+                data = conn.recv(chunksize)
+                file.write(data)
+                filesize -= len(data)
+
+            file.close()
+            print(f'File {filename} received successfully')
 
 def handleReceiveFileUpdate(conn):
-    # Receive filename
-    size = conn.recv(16).decode()
-    size = int(size, 2)
-    filename = conn.recv(size).decode()
+    directory = "."
 
-    # Receive file
-    filesize = conn.recv(32).decode()
-    filesize = int(filesize, 2)
-
-    file = open(filename, 'wb')
-
-    # Receive files in chunks of 1024 bytes
-    chunksize = packet_size
-    while filesize > 0:
-        if filesize < chunksize:
-            chunksize = filesize
+    while True:
+        # Receive file name size
+        size = conn.recv(21).decode()
         
-        data = conn.recv(chunksize)
-        file.write(data)
-        filesize -= len(data)
+        if not size or size == 'FINISHED':
+            # stop receiving if nothing is being sent anymore
+            break 
+        
+        cmd, size = size.split('@')
+        size = int(size, 2)
 
-    file.close()
-    print(f'File {filename} received successfully')
+        if cmd == 'FOLD':
+            foldername = conn.recv(size).decode()
+            if not os.path.exists(foldername):
+                os.mkdir(foldername)
+                directory = os.path.join(directory, foldername)
+                # print(directory)
+            else:
+                directory = os.path.join(directory, foldername)
+                continue
+
+        elif cmd == 'FILE':
+            filename = conn.recv(size).decode()
+            filename = os.path.join(directory, filename)
+
+            filesize = conn.recv(32).decode()
+            filesize = int(filesize, 2)
+            file = open(filename, 'wb')
+
+            chunksize = packet_size
+            while filesize > 0:
+                if filesize < chunksize:
+                    chunksize = filesize
+                
+                data = conn.recv(chunksize)
+                file.write(data)
+                filesize -= len(data)
+
+            file.close()
+            print(f'File {filename} received successfully')
+            break
 
 def handleSendFile(fileList, client_socket):
     for file in fileList:
+        directory = "."
+        print(file)
+
+        if len(file) > 1:
+            for i in range(0, len(file) - 1):
+                # Send folder name size and name
+                foldername = file[i]
+                directory = os.path.join(directory, foldername)
+
+                foldernameSize = len(foldername)
+                foldernameSize = bin(foldernameSize)[2:].zfill(16)
+                foldernameSize = 'FOLD@' + foldernameSize
+                client_socket.send(foldernameSize.encode())
+                client_socket.send(foldername.encode())
+            
+        # if file not in syncedFiles:
+        file = file[-1]
+
         print(f'Sending {file}')
 
-        # send filename size and filename
+        # send filename size
         size = len(file)
+        # encode size as 16 bit binary
         size = bin(size)[2:].zfill(16)
+        size = 'FILE@' + size
         client_socket.send(size.encode())
         client_socket.send(file.encode())
 
-        filename = os.path.join(current_dir, file)
-        filesize = os.path.getsize(file)
+        filename = os.path.join(directory, file)
+        print(filename)
+        filesize = os.path.getsize(filename)
         filesize = bin(filesize)[2:].zfill(32)
         client_socket.send(filesize.encode())
 
@@ -82,18 +139,20 @@ def handleSendFile(fileList, client_socket):
         data = fileOpened.read()
         client_socket.sendall(data)
         fileOpened.close()
-        print(f'File {file} sent')
-        client_socket.recv(4).decode()
+        print(f'File {filename} sent')
     
     client_socket.send('FINISHED'.encode())
 
 def handleFileDeletion(conn):
     # Receive file name size
-    size = conn.recv(16).decode()
+    size = conn.recv(32).decode()
     size = int(size, 2)
     # Receive 
     filename = conn.recv(size).decode()
-    os.remove(filename)
+    if os.path.exists(filename):
+        os.remove(filename)
+    else:
+        print(f'Deletion not possible because {filename} not found')
 
 
 #! Main thread function
@@ -110,8 +169,19 @@ def clientHandler(conn, addr):
             handleReceiveFiles(conn)
         # SEND FILES TO CLIENT
         elif command == '02':
-            dir_list = os.listdir(current_dir)
-            dir_list.remove('RCServer.py')
+            # dir_list = os.listdir(current_dir)
+            # dir_list.remove('RCServer.py')
+            result = [y for x in os.walk(current_dir) for y in glob(os.path.join(x[0], '*.*'))]
+            dir_list = []
+            for file in result:
+                hierarchy = file.split('/')
+                hierarchy.remove('.')
+                if hierarchy[0] != 'RCServer.py':
+                    if  (len(hierarchy) == 1 and '.' in hierarchy[0]):
+                        dir_list.append(hierarchy)
+                    elif len(hierarchy) > 1:
+                        dir_list.append(hierarchy)
+
             handleSendFile(dir_list, conn)
         elif command == '03':
             handleFileDeletion(conn)

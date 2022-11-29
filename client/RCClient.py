@@ -115,10 +115,7 @@ def handleSendFileUpdate(file, conn):
 
 
 if __name__ == '__main__':
-    #!!!!!! REINSTATE USER INPUT LATER --- REMOVED FOR TESTING
     server_name = input('Input the server IP address/name: ')
-    # server_name = 'localhost'
-    #!!!!!! FIX LINES ABOVE 
     
     # Obtain all items from folder 
     # current_dir = os.getcwd()
@@ -145,10 +142,9 @@ if __name__ == '__main__':
 
     #! At this point, the client is connected to server
 
-
-    # TODO: Automatic initial synchronization at this point~
-    #! IMPLEMENTATION WANTED IS NOT FULLY OPERATIONAL
-    # For right now, sending command 02 makes server send all files so do that for syncing 
+    # Initial connection synchronization - 
+    # First receive files from server
+    # Second, send files that were not received from the server to the server
     client_socket.send('02'.encode())
     handleSyncReceiveFiles(client_socket)
 

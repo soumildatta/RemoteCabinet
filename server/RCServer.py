@@ -38,20 +38,18 @@ def handleReceiveFiles(conn):
         print(f'File {filename} received successfully')
 
 def handleReceiveFileUpdate(conn):
+    # Receive filename
     size = conn.recv(16).decode()
-    
-    # if not size or size == 'FINISHED':
-    #     # stop receiving if nothing is being sent anymore
-    #     break 
-
     size = int(size, 2)
     filename = conn.recv(size).decode()
 
+    # Receive file
     filesize = conn.recv(32).decode()
     filesize = int(filesize, 2)
 
     file = open(filename, 'wb')
 
+    # Receive files in chunks of 1024 bytes
     chunksize = packet_size
     while filesize > 0:
         if filesize < chunksize:
@@ -64,14 +62,12 @@ def handleReceiveFileUpdate(conn):
     file.close()
     print(f'File {filename} received successfully')
 
-
 def handleSendFile(fileList, client_socket):
     for file in fileList:
         print(f'Sending {file}')
 
-        # send filename size
+        # send filename size and filename
         size = len(file)
-        # encode size as 16 bit binary
         size = bin(size)[2:].zfill(16)
         client_socket.send(size.encode())
         client_socket.send(file.encode())
@@ -94,14 +90,9 @@ def handleSendFile(fileList, client_socket):
 def handleFileDeletion(conn):
     # Receive file name size
     size = conn.recv(16).decode()
-    
-    # if not size or size == 'FINISHED':
-    #     # stop receiving if nothing is being sent anymore
-    #     break
-
     size = int(size, 2)
+    # Receive 
     filename = conn.recv(size).decode()
-
     os.remove(filename)
 
 
@@ -121,13 +112,10 @@ def clientHandler(conn, addr):
         elif command == '02':
             dir_list = os.listdir(current_dir)
             dir_list.remove('RCServer.py')
-            print(dir_list)
             handleSendFile(dir_list, conn)
         elif command == '03':
-            print('DELETING FILE')
             handleFileDeletion(conn)
         elif command == '04':
-            print('RECEIVING NEW FILE')
             handleReceiveFileUpdate(conn)
         elif command == '11':
             break
@@ -137,7 +125,6 @@ def clientHandler(conn, addr):
 
 
 if __name__ == '__main__':
-
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.bind(('', server_port))
     server_socket.listen(1)

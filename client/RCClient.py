@@ -12,28 +12,15 @@ current_dir = './'
 
 syncedFiles = []
 
-def handleSendFiles(fileList, client_socket):
-    for file in fileList:
-        print(f'Sending {file}')
+def calcNewModTimes(file_list):
+    newModTimes = {}
 
-        # send filename size
-        size = len(file)
-        # encode size as 16 bit binary
-        size = bin(size)[2:].zfill(16)
-        client_socket.send(size.encode())
-        client_socket.send(file.encode())
+    for filename in file_list:
+        # print(filename)
+        if os.path.exists(filename) and filename != 'RCClient.py':
+            newModTimes[filename] = os.stat(filename).st_mtime
 
-        filename = os.path.join(current_dir, file)
-        filesize = os.path.getsize(file)
-        filesize = bin(filesize)[2:].zfill(32)
-        client_socket.send(filesize.encode())
-
-        fileOpened = open(filename, 'rb')
-
-        data = fileOpened.read()
-        client_socket.sendall(data)
-        fileOpened.close()
-        print(f'File {file} sent')
+    return newModTimes
 
 def handleSyncSendFiles(fileList, client_socket):
     for file in fileList:
@@ -60,36 +47,6 @@ def handleSyncSendFiles(fileList, client_socket):
             print(f'File {file} sent')
     
     client_socket.send('FINISHED'.encode())
-
-def handleReceiveFiles(conn):
-    while True:
-        # Receive file name size
-        size = conn.recv(16).decode()
-
-        # stop receiving if nothing is being sent anymore
-        if not size or size == 'FINISHED':
-            break 
-
-        size = int(size, 2)
-        filename = conn.recv(size).decode()
-
-        filesize = conn.recv(32).decode()
-        filesize = int(filesize, 2)
-
-        file = open(filename, 'wb')
-
-        chunksize = packet_size
-        while filesize > 0:
-            if filesize < chunksize:
-                chunksize = filesize
-            
-            data = conn.recv(chunksize)
-            file.write(data)
-            filesize -= len(data)
-
-        file.close()
-        conn.send('RECV'.encode())
-        print(f'File {filename} received successfully')
 
 def handleSyncReceiveFiles(conn):
     current_files = os.listdir(current_dir)
@@ -132,7 +89,6 @@ def handleFileDeletion(file, conn):
     size = bin(size)[2:].zfill(16)
     client_socket.send(size.encode())
     client_socket.send(file.encode())
-
     print(f'File {file} deleted from server')
 
 def handleSendFileUpdate(file, conn):
@@ -160,8 +116,8 @@ def handleSendFileUpdate(file, conn):
 
 if __name__ == '__main__':
     #!!!!!! REINSTATE USER INPUT LATER --- REMOVED FOR TESTING
-    # server_name = input('Input the server IP address/name: ')
-    server_name = 'localhost'
+    server_name = input('Input the server IP address/name: ')
+    # server_name = 'localhost'
     #!!!!!! FIX LINES ABOVE 
     
     # Obtain all items from folder 
@@ -199,26 +155,47 @@ if __name__ == '__main__':
     client_socket.send('01'.encode())
     handleSyncSendFiles(dir_list, client_socket)
 
+    # Get file modified times
+    modtimes = {}
+    for file in dir_list:
+        if file != 'RCClient.py':
+            modtimes[file] = os.stat(file).st_mtime
+
     try:
         old = os.listdir(current_dir)
         # print(old)
 
         while True:
             new = os.listdir(current_dir)
-            if len(new) > len(old):
-                client_socket.send('04'.encode())
-                newfile = list(set(new) - set(old))
-                print(newfile[0])
-                handleSendFileUpdate(newfile[0], client_socket)
-                old = new
-            elif len(new) < len(old):
-                # file has been deleted
-                client_socket.send('03'.encode())
-                deleteFilename = list(set(old) - set(new))[0]
-                handleFileDeletion(deleteFilename, client_socket)
-                old = new
-            else:
-                continue
+            newModtimes = calcNewModTimes(new)
+
+            if modtimes != newModtimes:
+                # This is to notice update when a file is already 
+                new = os.listdir(current_dir)
+
+                dict1 = set(modtimes.items())
+                dict2 = set(newModtimes.items())
+
+                if len(new) > len(old):
+                    client_socket.send('04'.encode())
+                    newfile = list(set(new) - set(old))[0]
+                    # print(newfile[0])
+                    handleSendFileUpdate(newfile, client_socket)
+                    old = new
+                elif len(new) < len(old):
+                    # file has been deleted
+                    client_socket.send('03'.encode())
+                    deleteFilename = list(set(old) - set(new))[0]
+                    handleFileDeletion(deleteFilename, client_socket)
+                    old = new
+                else:
+                    updateFile = list(dict2 - dict1)[0][0]
+                    print('Modified: ', updateFile)
+                    client_socket.send('04'.encode())
+                    handleSendFileUpdate(updateFile, client_socket)
+
+                modtimes = newModtimes
+
     except KeyboardInterrupt:
         client_socket.send('11'.encode())
         print('Disconnected from server')

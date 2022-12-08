@@ -198,6 +198,54 @@ def handleSendFileUpdate(file, conn):
     client_socket.send('FINISHED'.encode())
 
 
+def handleReceiveFileUpdate(conn):
+    directory = "."
+
+    while True:
+        # Receive file name size
+        size = conn.recv(21).decode()
+        
+        if not size:
+            # stop receiving if nothing is being sent anymore
+            break 
+        
+        cmd, size = size.split('@')
+        size = int(size, 2)
+
+        if cmd == 'NONE':
+            break
+
+        if cmd == 'FOLD':
+            foldername = conn.recv(size).decode()
+            directory = os.path.join(directory, foldername)
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+            else:
+                continue
+
+        elif cmd == 'FILE':
+            filename = conn.recv(size).decode()
+            filename = os.path.join(directory, filename)
+
+            filesize = conn.recv(32).decode()
+            filesize = int(filesize, 2)
+            file = open(filename, 'wb')
+
+            chunksize = packet_size
+            while filesize > 0:
+                if filesize < chunksize:
+                    chunksize = filesize
+                
+                data = conn.recv(chunksize)
+                file.write(data)
+                filesize -= len(data)
+
+            file.close()
+            print(f'File {filename} received from server successfully')
+                        
+            break
+
+
 def listFiles(directory):
     result = [y for x in os.walk(directory) for y in glob(os.path.join(x[0], '*.*'))]
     dir_list = []
@@ -302,20 +350,15 @@ if __name__ == '__main__':
 
                 modtimes = newModtimes
 
+
+            # TODO: UNDER CONSTRUCTION - it is stuck because it is inside the modtimes
             time.sleep(1)
             # Send message to server asking for update
             client_socket.send('05'.encode())
-            print('Sent stuff')
-
-
-            # # TODO: UNDER CONSTRUCTION - it is stuck because it is inside the modtimes
-            # serverResponse = client_socket.recv(6).decode()
-            # cmd, response = serverResponse.split('@')
-            # if cmd == 'NONE':
-            #     print('Theres nothing')
-            #     continue
-            # elif cmd == 'RECV':
-            #     print('Got files to receive')
+            serverResponse = client_socket.recv(6).decode()
+            cmd, message = serverResponse.split('@')
+            if cmd == 'RECV':
+                handleReceiveFileUpdate(client_socket)
 
     except KeyboardInterrupt:
         # Send the break signal to the server to disconnect with this client

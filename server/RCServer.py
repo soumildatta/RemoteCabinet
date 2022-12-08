@@ -157,15 +157,72 @@ def handleSendFile(fileList, client_socket):
             
     client_socket.send('FINISHED'.encode())
 
+
+
+
+
+##########
+def handleSendOneFile(file, conn):
+    directory = "."
+    file = file.split('/')
+
+    if len(file) > 1:
+        for i in range(0, len(file) - 1):
+            # Send folder name size and name
+            foldername = file[i]
+            directory = os.path.join(directory, foldername)
+
+            foldernameSize = len(foldername)
+            foldernameSize = bin(foldernameSize)[2:].zfill(16)
+            foldernameSize = 'FOLD@' + foldernameSize
+            conn.send(foldernameSize.encode())
+            conn.send(foldername.encode())
+        
+    file = file[-1]
+
+    print(f'Sending {file}')
+
+    # send filename size
+    size = len(file)
+    # encode size as 16 bit binary
+    size = bin(size)[2:].zfill(16)
+    size = 'FILE@' + size
+    conn.send(size.encode())
+    conn.send(file.encode())
+
+    filename = os.path.join(directory, file)
+    filesize = os.path.getsize(filename)
+    filesize = bin(filesize)[2:].zfill(32)
+    conn.send(filesize.encode())
+    fileOpened = open(filename, 'rb')
+
+    data = fileOpened.read()
+    conn.sendall(data)
+    fileOpened.close()
+    print(f'File {filename} sent')
+            
+    conn.send('NONE@2'.encode())
+###########
+
 def handleSendFileUpdate(files, conn, addr):
-    # print('There was a new update from a client and it needs to now be sent to client')
-    # conn.send('RECV@1'.encode())
+    print('There was a new update from a client and it needs to now be sent to client')
 
     if len(files):
         for file in files:
             file = './' + file
-            if receivedFiles[file] != addr:
-                print('gotta send update to', addr)
+            if file in receivedFiles.keys():
+                if receivedFiles[file] != addr:
+                    conn.send('RECV@1'.encode())
+                    handleSendOneFile(file, conn)
+                else:
+                    conn.send('NONE@0'.encode())
+                poppedFile = receivedFiles.pop(file, 'unknown')
+                print('here 1')
+            else:
+                conn.send('NONE@1'.encode())
+                print('here 2')
+                continue
+                # print('You added a file manually in the server folder which is not yet supported by RemoteCabinet')
 
 def handleFileDeletion(conn):
     while True:
@@ -192,6 +249,13 @@ def handleFileDeletion(conn):
             else:
                 print(f'Deletion not possible because {filename} not found')
 
+def handleServerSendAdd(old_list, new_list, conn, addr):
+    if len(new_list) > len(old_list):
+        newfiles = list(set(new_list) - set(old_list))
+        handleSendFileUpdate(newfiles, conn, addr)
+    else:
+        conn.send('NONE@0'.encode())
+
 # This function preserves the / and does not tokenize
 def listFiles2(directory):
     result = [y for x in os.walk(directory) for y in glob(os.path.join(x[0], '*.*'))]
@@ -215,6 +279,7 @@ def clientHandler(conn, addr):
 
     while True:
         # Receive command for what to do
+        print('Listening for client command')
         command = conn.recv(2).decode()
 
         # RECEIVE FILES FROM CLIENT
@@ -230,21 +295,12 @@ def clientHandler(conn, addr):
         elif command == '04':
             handleReceiveFileUpdate(conn)
         elif command == '05':
-            print('Server needs to update client here')
+            new_list = listFiles2(current_dir)
+            handleServerSendAdd(old_list, new_list, conn, addr)
+            old_list = new_list
+        # End client thread - client disconnected
         elif command == '11':
             break
-        
-        new_list = listFiles2(current_dir)
-
-        # TODO: UNDER CONSTRUCTION SERVER SYNCING
-        if len(new_list) > len(old_list):
-            newfiles = list(set(new_list) - set(old_list))
-            handleSendFileUpdate(newfiles, conn, addr)
-        # else:
-        #     # TODO: gotta handle file updates with mod times later here
-        #     # For now we just make this send something temporary to the client whenever its here
-        #     hi = 1
-        #     conn.send('NONE@0'.encode())
 
     print(f'Client {addr} disconnected')
     conn.close()

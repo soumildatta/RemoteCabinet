@@ -6,6 +6,7 @@ import os
 import sys
 from glob import glob
 import time
+import shutil
 
 # from utilities import testPrint
 
@@ -152,6 +153,30 @@ def handleFileDeletion(file, conn):
 
     client_socket.send('FINISHED@0000000000000000000000000000'.encode())
 
+def handleFileDeleteFromServer(conn):
+    while True:
+        size = conn.recv(37).decode()
+
+        if not size or size == 'FINISHED@0000000000000000000000000000':
+            break
+
+        cmd, size = size.split('@')
+        size = int(size, 2)
+
+        if cmd == 'FDEL':
+            foldername = conn.recv(size).decode()
+            if os.path.exists(foldername):
+                # os.rmdir(foldername)
+                shutil.rmtree(foldername)
+            else:
+                print(f'Deletion not possible because {foldername} not found')
+
+        elif cmd == 'FILE':
+            filename = conn.recv(size).decode()
+            if os.path.exists(filename):
+                os.remove(filename)
+            else:
+                print(f'Deletion not possible because {filename} not found')
 
 def handleSendFileUpdate(file, conn):
     directory = "."
@@ -359,6 +384,8 @@ if __name__ == '__main__':
             cmd, message = serverResponse.split('@')
             if cmd == 'RECV':
                 handleReceiveFileUpdate(client_socket)
+            elif cmd == 'DELE':
+                handleFileDeleteFromServer(client_socket)
 
     except KeyboardInterrupt:
         # Send the break signal to the server to disconnect with this client

@@ -158,10 +158,6 @@ def handleSendFile(fileList, client_socket):
     client_socket.send('FINISHED'.encode())
 
 
-
-
-
-##########
 def handleSendOneFile(file, conn):
     directory = "."
     file = file.split('/')
@@ -202,7 +198,7 @@ def handleSendOneFile(file, conn):
     print(f'File {filename} sent')
             
     conn.send('NONE@2'.encode())
-###########
+
 
 def handleSendFileUpdate(files, conn, addr):
     print('There was a new update from a client and it needs to now be sent to client')
@@ -249,10 +245,73 @@ def handleFileDeletion(conn):
             else:
                 print(f'Deletion not possible because {filename} not found')
 
-def handleServerSendAdd(old_list, new_list, conn, addr):
+def handleSendDelete(files, conn):
+    for item in files:
+        if '/' in item:
+            prevFolderItems = item.split('/')[:-1]
+            previousFolder = '/'.join(prevFolderItems)
+            if not os.path.exists(previousFolder):            
+                size = len(previousFolder)
+                size = bin(size)[2:].zfill(32)
+                size = 'FDEL@' + size
+                conn.send(size.encode())
+                conn.send(previousFolder.encode())
+
+                # this folder was deleted
+                print(f'folder {previousFolder} deleted from server')
+                break
+
+        size = len(item)
+        size = bin(size)[2:].zfill(32)
+        size = 'FILE@' + size
+        conn.send(size.encode())
+        conn.send(item.encode())
+
+        print(f'File {item} deleted from server')
+
+        # Remove deleted file from received files
+        item = './' + item
+        if item in receivedFiles.keys():
+            receivedFiles.pop(item, 'unknown')
+
+    conn.send('FINISHED@0000000000000000000000000000'.encode())
+
+
+def handleFileDeletion(conn):
+    while True:
+        size = conn.recv(37).decode()
+
+        if not size or size == 'FINISHED@0000000000000000000000000000':
+            break
+
+        cmd, size = size.split('@')
+        size = int(size, 2)
+
+        if cmd == 'FDEL':
+            foldername = conn.recv(size).decode()
+            if os.path.exists(foldername):
+                # os.rmdir(foldername)
+                shutil.rmtree(foldername)
+            else:
+                print(f'Deletion not possible because {foldername} not found')
+
+        elif cmd == 'FILE':
+            filename = conn.recv(size).decode()
+            if os.path.exists(filename):
+                os.remove(filename)
+            else:
+                print(f'Deletion not possible because {filename} not found')
+
+
+def handleServerUpdate(old_list, new_list, conn, addr):
     if len(new_list) > len(old_list):
         newfiles = list(set(new_list) - set(old_list))
         handleSendFileUpdate(newfiles, conn, addr)
+    elif len(new_list) < len(old_list):
+        deletefiles = list(set(old_list) - set(new_list))
+        print('Deleting files', deletefiles)
+        conn.send('DELE@1'.encode())
+        handleSendDelete(deletefiles, conn)
     else:
         conn.send('NONE@0'.encode())
 
@@ -296,7 +355,7 @@ def clientHandler(conn, addr):
             handleReceiveFileUpdate(conn)
         elif command == '05':
             new_list = listFiles2(current_dir)
-            handleServerSendAdd(old_list, new_list, conn, addr)
+            handleServerUpdate(old_list, new_list, conn, addr)
             old_list = new_list
         # End client thread - client disconnected
         elif command == '11':

@@ -1,5 +1,6 @@
 # Author: Soumil Datta
 
+from fileinput import filelineno
 from socket import *
 import os 
 import threading
@@ -157,12 +158,14 @@ def handleSendFile(fileList, client_socket):
     client_socket.send('FINISHED'.encode())
 
 def handleSendFileUpdate(files, conn, addr):
-    print('There was a new update from a client and it needs to now be sent to client')
+    # print('There was a new update from a client and it needs to now be sent to client')
+    # conn.send('RECV@1'.encode())
 
-    for file in files:
-        file = './' + file
-        if receivedFiles[file] != addr:
-            print('gotta send update to', addr)
+    if len(files):
+        for file in files:
+            file = './' + file
+            if receivedFiles[file] != addr:
+                print('gotta send update to', addr)
 
 def handleFileDeletion(conn):
     while True:
@@ -221,10 +224,13 @@ def clientHandler(conn, addr):
         elif command == '02':
             dir_list = listFiles2(current_dir)
             handleSendFile(dir_list, conn)
+
         elif command == '03':
             handleFileDeletion(conn)
         elif command == '04':
             handleReceiveFileUpdate(conn)
+        elif command == '05':
+            print('Server needs to update client here')
         elif command == '11':
             break
         
@@ -234,6 +240,11 @@ def clientHandler(conn, addr):
         if len(new_list) > len(old_list):
             newfiles = list(set(new_list) - set(old_list))
             handleSendFileUpdate(newfiles, conn, addr)
+        # else:
+        #     # TODO: gotta handle file updates with mod times later here
+        #     # For now we just make this send something temporary to the client whenever its here
+        #     hi = 1
+        #     conn.send('NONE@0'.encode())
 
     print(f'Client {addr} disconnected')
     conn.close()

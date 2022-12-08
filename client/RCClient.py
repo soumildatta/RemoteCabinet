@@ -5,6 +5,7 @@ from socket import *
 import os
 import sys
 from glob import glob
+import time
 
 # from utilities import testPrint
 
@@ -300,6 +301,21 @@ if __name__ == '__main__':
                     handleSendFileUpdate(updateFile, client_socket)
 
                 modtimes = newModtimes
+
+            time.sleep(1)
+            # Send message to server asking for update
+            client_socket.send('05'.encode())
+            print('Sent stuff')
+
+
+            # # TODO: UNDER CONSTRUCTION - it is stuck because it is inside the modtimes
+            # serverResponse = client_socket.recv(6).decode()
+            # cmd, response = serverResponse.split('@')
+            # if cmd == 'NONE':
+            #     print('Theres nothing')
+            #     continue
+            # elif cmd == 'RECV':
+            #     print('Got files to receive')
 
     except KeyboardInterrupt:
         # Send the break signal to the server to disconnect with this client

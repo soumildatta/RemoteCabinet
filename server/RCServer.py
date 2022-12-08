@@ -4,8 +4,9 @@ from socket import *
 import os 
 import threading
 from glob import glob
+import shutil
 
-server_port = 12001
+server_port = 12000
 packet_size = 1024
 current_dir = './'
 
@@ -143,15 +144,38 @@ def handleSendFile(fileList, client_socket):
 
 def handleFileDeletion(conn):
     # Receive file name size
-    size = conn.recv(32).decode()
-    size = int(size, 2)
-    # Receive 
-    filename = conn.recv(size).decode()
-    if os.path.exists(filename):
-        os.remove(filename)
-    else:
-        print(f'Deletion not possible because {filename} not found')
+    # size = conn.recv(32).decode()
+    # size = int(size, 2)
+    # # Receive 
+    # filename = conn.recv(size).decode()
+    # if os.path.exists(filename):
+    #     os.remove(filename)
+    # else:
+    #     print(f'Deletion not possible because {filename} not found')
 
+    while True:
+        size = conn.recv(37).decode()
+
+        if not size or size == 'FINISHED@0000000000000000000000000000':
+            break
+
+        cmd, size = size.split('@')
+        size = int(size, 2)
+
+        if cmd == 'FDEL':
+            foldername = conn.recv(size).decode()
+            if os.path.exists(foldername):
+                # os.rmdir(foldername)
+                shutil.rmtree(foldername)
+            else:
+                print(f'Deletion not possible because {foldername} not found')
+
+        elif cmd == 'FILE':
+            filename = conn.recv(size).decode()
+            if os.path.exists(filename):
+                os.remove(filename)
+            else:
+                print(f'Deletion not possible because {filename} not found')
 
 #! Main thread function
 def clientHandler(conn, addr):

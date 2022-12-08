@@ -8,7 +8,7 @@ from glob import glob
 
 # from utilities import testPrint
 
-server_port = 12001
+server_port = 12000
 packet_size = 1024
 current_dir = './'
 
@@ -121,12 +121,31 @@ def handleSyncReceiveFiles(conn):
                 print(f'File {filename} received successfully')
 
 def handleFileDeletion(file, conn):
-    # Get filename size and send filename
-    size = len(file)
-    size = bin(size)[2:].zfill(32)
-    client_socket.send(size.encode())
-    client_socket.send(file.encode())
-    print(f'File {file} deleted from server')
+    for item in file:
+        # check if the previous folder is deleted 
+        prevFolderItems = item.split('/')[:-1]
+        previousFolder = '/'.join(prevFolderItems)
+        print(previousFolder)
+        if not os.path.exists(previousFolder):            
+            size = len(previousFolder)
+            size = bin(size)[2:].zfill(32)
+            size = 'FDEL@' + size
+            client_socket.send(size.encode())
+            client_socket.send(previousFolder.encode())
+
+            # this folder was deleted
+            print(f'folder {previousFolder} deleted from server')
+            break
+
+        size = len(item)
+        size = bin(size)[2:].zfill(32)
+        size = 'FILE@' + size
+        client_socket.send(size.encode())
+        client_socket.send(item.encode())
+
+        print(f'File {item} deleted from server')
+
+    client_socket.send('FINISHED@0000000000000000000000000000'.encode())
 
 
 def handleSendFileUpdate(file, conn):
@@ -266,7 +285,7 @@ if __name__ == '__main__':
                 elif len(new) < len(old):
                     # file has been deleted
                     client_socket.send('03'.encode())
-                    deleteFilename = list(set(old) - set(new))[0]
+                    deleteFilename = list(set(old) - set(new))
                     handleFileDeletion(deleteFilename, client_socket)
                     old = new
                 # Handle file modified in directory

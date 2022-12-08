@@ -12,22 +12,23 @@ current_dir = './'
 
 syncedFiles = []
 
+# Calculate the file modification times
 def calcNewModTimes(file_list):
     newModTimes = {}
-
     for filename in file_list:
-        # print(filename)
         if os.path.exists(filename) and filename != 'RCClient.py':
             newModTimes[filename] = os.stat(filename).st_mtime
 
     return newModTimes
 
-
+# Send client files to server for initial synchronization
 def handleSyncSendFiles(fileList, client_socket):    
     for file in fileList:
         directory = "."
-
+        
+        # If the length of the file variable is longer than one, then there are folders
         if len(file) > 1 and file[-1] not in syncedFiles:
+            # Send each folder
             for i in range(0, len(file) - 1):
                 # Send folder name size and name
                 foldername = file[i]
@@ -35,12 +36,14 @@ def handleSyncSendFiles(fileList, client_socket):
 
                 foldernameSize = len(foldername)
                 foldernameSize = bin(foldernameSize)[2:].zfill(16)
+
+                # Use the FOLD@ command to denote sending of a folder
                 foldernameSize = 'FOLD@' + foldernameSize
                 client_socket.send(foldernameSize.encode())
                 client_socket.send(foldername.encode())
-            
+        
+        # The item at index -1 is guaranteed to be a file. Send as a file
         if file[-1] not in syncedFiles:
-        # if file not in syncedFiles:
             file = file[-1]
 
             print(f'Sending {file}')
@@ -67,7 +70,7 @@ def handleSyncSendFiles(fileList, client_socket):
     
     client_socket.send('FINISHED'.encode())
 
-
+# Receive files from server for initial synchronization
 def handleSyncReceiveFiles(conn):
     current_files = listFiles2(current_dir)
     directory = "."
@@ -83,6 +86,7 @@ def handleSyncReceiveFiles(conn):
         cmd, size = size.split('@')
         size = int(size, 2)
 
+        # If the commmand is FOLD, create a folder
         if cmd == 'FOLD':
             foldername = conn.recv(size).decode()
             # Skip if the folder already exists
@@ -93,6 +97,7 @@ def handleSyncReceiveFiles(conn):
                 # directory = os.path.join(directory, foldername)
                 continue
 
+        # If the command is FILE, create a file at the directory
         elif cmd == 'FILE':
             filename = conn.recv(size).decode()
             filename = os.path.join(directory, filename)
@@ -118,16 +123,19 @@ def handleSyncReceiveFiles(conn):
             if filename[2:] not in current_files:
                 print(f'File {filename} received successfully')
 
-            # Reset directory
+            # Reset directory because next file might have different folder
             directory = '.'
 
 
+# Send filename to server to delete the file from server
 def handleFileDeletion(file, conn):
     for item in file:
-        # check if the previous folder is deleted 
+        # check if the previous folder is deleted on the client
         if '/' in item:
             prevFolderItems = item.split('/')[:-1]
             previousFolder = '/'.join(prevFolderItems)
+
+            # If the path does not exist, send command to server to delete folder
             if not os.path.exists(previousFolder):            
                 size = len(previousFolder)
                 size = bin(size)[2:].zfill(32)
@@ -136,9 +144,10 @@ def handleFileDeletion(file, conn):
                 client_socket.send(previousFolder.encode())
 
                 # this folder was deleted
-                print(f'folder {previousFolder} deleted from server')
+                print(f'Folder {previousFolder} deleted from server')
                 break
 
+        # Delete the file
         size = len(item)
         size = bin(size)[2:].zfill(32)
         size = 'FILE@' + size
@@ -149,13 +158,14 @@ def handleFileDeletion(file, conn):
 
     client_socket.send('FINISHED@0000000000000000000000000000'.encode())
 
+# Receive a delete signal from server and delete the file and folder
 def handleFileDeleteFromServer(conn):
     while True:
         size = conn.recv(37).decode()
 
         if not size or size == 'FINISHED@0000000000000000000000000000':
             break
-
+        
         cmd, size = size.split('@')
         size = int(size, 2)
 
@@ -174,6 +184,7 @@ def handleFileDeleteFromServer(conn):
             else:
                 print(f'Deletion not possible because {filename} not found')
 
+# Send any new file additions or modifications
 def handleSendFileUpdate(file, conn):
     directory = "."
     file = file.split('/')
@@ -218,7 +229,7 @@ def handleSendFileUpdate(file, conn):
     
     client_socket.send('FINISHED'.encode())
 
-
+# Receive any new file additions on the server
 def handleReceiveFileUpdate(conn):
     directory = "."
 
@@ -266,7 +277,7 @@ def handleReceiveFileUpdate(conn):
                         
             break
 
-
+# List the files without the / (legacy)
 def listFiles(directory):
     result = [y for x in os.walk(directory) for y in glob(os.path.join(x[0], '*.*'))]
     dir_list = []
@@ -301,7 +312,6 @@ if __name__ == '__main__':
 
     dir_list = listFiles(current_dir)
 
-    # try:
     client_socket = socket(AF_INET, SOCK_STREAM)
     client_socket.connect((server_name, server_port))
 
@@ -371,17 +381,20 @@ if __name__ == '__main__':
 
                 modtimes = newModtimes
 
-
-            # TODO: UNDER CONSTRUCTION - it is stuck because it is inside the modtimes
+            # Wait for a second before listening to server for updates
             time.sleep(1)
+
             # Send message to server asking for update
             client_socket.send('05'.encode())
             serverResponse = client_socket.recv(6).decode()
             cmd, message = serverResponse.split('@')
+            # Receive files
             if cmd == 'RECV':
                 handleReceiveFileUpdate(client_socket)
             elif cmd == 'DELE':
                 handleFileDeleteFromServer(client_socket)
+            # elif cmd == 'UPDT':
+            #     handleReceiveFileUpdate(client_socket)
 
     except KeyboardInterrupt:
         # Send the break signal to the server to disconnect with this client

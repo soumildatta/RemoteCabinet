@@ -127,18 +127,19 @@ def handleSyncReceiveFiles(conn):
 def handleFileDeletion(file, conn):
     for item in file:
         # check if the previous folder is deleted 
-        prevFolderItems = item.split('/')[:-1]
-        previousFolder = '/'.join(prevFolderItems)
-        if not os.path.exists(previousFolder):            
-            size = len(previousFolder)
-            size = bin(size)[2:].zfill(32)
-            size = 'FDEL@' + size
-            client_socket.send(size.encode())
-            client_socket.send(previousFolder.encode())
+        if '/' in item:
+            prevFolderItems = item.split('/')[:-1]
+            previousFolder = '/'.join(prevFolderItems)
+            if not os.path.exists(previousFolder):            
+                size = len(previousFolder)
+                size = bin(size)[2:].zfill(32)
+                size = 'FDEL@' + size
+                client_socket.send(size.encode())
+                client_socket.send(previousFolder.encode())
 
-            # this folder was deleted
-            print(f'folder {previousFolder} deleted from server')
-            break
+                # this folder was deleted
+                print(f'folder {previousFolder} deleted from server')
+                break
 
         size = len(item)
         size = bin(size)[2:].zfill(32)

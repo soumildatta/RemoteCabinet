@@ -1,14 +1,10 @@
 # Author: Soumil Datta
 
-from inspect import currentframe
 from socket import *
 import os
-import sys
 from glob import glob
 import time
 import shutil
-
-# from utilities import testPrint
 
 server_port = 12000
 packet_size = 1024

@@ -10,7 +10,12 @@ server_port = 12000
 packet_size = 1024
 current_dir = './'
 
-def handleReceiveFiles(conn):
+# Utilize dictionary like a hashmap
+# This dict will contain all files received from the client
+# Key - filename, value - client address
+receivedFiles = {}
+
+def handleReceiveFiles(conn, addr):
     directory = "."
 
     while True:
@@ -54,8 +59,11 @@ def handleReceiveFiles(conn):
             file.close()
             print(f'File {filename} received successfully')
 
-            # 
+            # Reset directory
             directory = '.'
+
+            # Add file to the received files
+            receivedFiles[filename] = addr
 
 def handleReceiveFileUpdate(conn):
     directory = "."
@@ -100,6 +108,10 @@ def handleReceiveFileUpdate(conn):
 
             file.close()
             print(f'File {filename} received successfully')
+            
+            # Add file to the received files
+            receivedFiles[filename] = addr
+            
             break
 
 def handleSendFile(fileList, client_socket):
@@ -143,6 +155,14 @@ def handleSendFile(fileList, client_socket):
         print(f'File {filename} sent')
             
     client_socket.send('FINISHED'.encode())
+
+def handleSendFileUpdate(files, conn, addr):
+    print('There was a new update from a client and it needs to now be sent to client')
+
+    for file in files:
+        file = './' + file
+        if receivedFiles[file] != addr:
+            print('gotta send update to', addr)
 
 def handleFileDeletion(conn):
     while True:
@@ -188,13 +208,15 @@ def clientHandler(conn, addr):
     print(f'Client {addr} connected')
     conn.send(f'100@Connection with server established'.encode())
 
+    old_list = listFiles2(current_dir)
+
     while True:
         # Receive command for what to do
         command = conn.recv(2).decode()
 
         # RECEIVE FILES FROM CLIENT
         if command == '01':
-            handleReceiveFiles(conn)
+            handleReceiveFiles(conn, addr)
         # SEND FILES TO CLIENT
         elif command == '02':
             dir_list = listFiles2(current_dir)
@@ -205,6 +227,13 @@ def clientHandler(conn, addr):
             handleReceiveFileUpdate(conn)
         elif command == '11':
             break
+        
+        new_list = listFiles2(current_dir)
+
+        # TODO: UNDER CONSTRUCTION SERVER SYNCING
+        if len(new_list) > len(old_list):
+            newfiles = list(set(new_list) - set(old_list))
+            handleSendFileUpdate(newfiles, conn, addr)
 
     print(f'Client {addr} disconnected')
     conn.close()

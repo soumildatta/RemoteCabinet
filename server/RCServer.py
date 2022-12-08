@@ -54,6 +54,9 @@ def handleReceiveFiles(conn):
             file.close()
             print(f'File {filename} received successfully')
 
+            # 
+            directory = '.'
+
 def handleReceiveFileUpdate(conn):
     directory = "."
 
@@ -102,6 +105,7 @@ def handleReceiveFileUpdate(conn):
 def handleSendFile(fileList, client_socket):
     for file in fileList:
         directory = "."
+        file = file.split('/')
 
         if len(file) > 1:
             for i in range(0, len(file) - 1):
@@ -115,7 +119,6 @@ def handleSendFile(fileList, client_socket):
                 client_socket.send(foldernameSize.encode())
                 client_socket.send(foldername.encode())
             
-        # if file not in syncedFiles:
         file = file[-1]
 
         print(f'Sending {file}')
@@ -132,27 +135,16 @@ def handleSendFile(fileList, client_socket):
         filesize = os.path.getsize(filename)
         filesize = bin(filesize)[2:].zfill(32)
         client_socket.send(filesize.encode())
-
         fileOpened = open(filename, 'rb')
 
         data = fileOpened.read()
         client_socket.sendall(data)
         fileOpened.close()
         print(f'File {filename} sent')
-    
+            
     client_socket.send('FINISHED'.encode())
 
 def handleFileDeletion(conn):
-    # Receive file name size
-    # size = conn.recv(32).decode()
-    # size = int(size, 2)
-    # # Receive 
-    # filename = conn.recv(size).decode()
-    # if os.path.exists(filename):
-    #     os.remove(filename)
-    # else:
-    #     print(f'Deletion not possible because {filename} not found')
-
     while True:
         size = conn.recv(37).decode()
 
@@ -177,6 +169,20 @@ def handleFileDeletion(conn):
             else:
                 print(f'Deletion not possible because {filename} not found')
 
+# This function preserves the / and does not tokenize
+def listFiles2(directory):
+    result = [y for x in os.walk(directory) for y in glob(os.path.join(x[0], '*.*'))]
+    dir_list = []
+    for file in result:
+        hierarchy = file.split('/')
+        hierarchy.remove('.')
+        if hierarchy[0] != 'RCServer.py':
+            if  (len(hierarchy) == 1 and '.' in hierarchy[0]):
+                dir_list.append('/'.join(hierarchy))
+            elif len(hierarchy) > 1:
+                dir_list.append('/'.join(hierarchy))
+    return dir_list
+
 #! Main thread function
 def clientHandler(conn, addr):
     print(f'Client {addr} connected')
@@ -191,19 +197,7 @@ def clientHandler(conn, addr):
             handleReceiveFiles(conn)
         # SEND FILES TO CLIENT
         elif command == '02':
-            # dir_list = os.listdir(current_dir)
-            # dir_list.remove('RCServer.py')
-            result = [y for x in os.walk(current_dir) for y in glob(os.path.join(x[0], '*.*'))]
-            dir_list = []
-            for file in result:
-                hierarchy = file.split('/')
-                hierarchy.remove('.')
-                if hierarchy[0] != 'RCServer.py':
-                    if  (len(hierarchy) == 1 and '.' in hierarchy[0]):
-                        dir_list.append(hierarchy)
-                    elif len(hierarchy) > 1:
-                        dir_list.append(hierarchy)
-
+            dir_list = listFiles2(current_dir)
             handleSendFile(dir_list, conn)
         elif command == '03':
             handleFileDeletion(conn)

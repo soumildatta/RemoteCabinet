@@ -24,10 +24,10 @@ def calcNewModTimes(file_list):
 
     return newModTimes
 
+
 def handleSyncSendFiles(fileList, client_socket):    
     for file in fileList:
         directory = "."
-        # print(file)
 
         if len(file) > 1 and file[-1] not in syncedFiles:
             for i in range(0, len(file) - 1):
@@ -68,6 +68,7 @@ def handleSyncSendFiles(fileList, client_socket):
             print(f'File {filename} sent')
     
     client_socket.send('FINISHED'.encode())
+
 
 def handleSyncReceiveFiles(conn):
     current_files = listFiles2(current_dir)
@@ -117,15 +118,17 @@ def handleSyncReceiveFiles(conn):
             syncedFiles.append(filename.split('/')[-1])
 
             if filename[2:] not in current_files:
-                print(filename, current_files)
                 print(f'File {filename} received successfully')
+
+            # Reset directory
+            directory = '.'
+
 
 def handleFileDeletion(file, conn):
     for item in file:
         # check if the previous folder is deleted 
         prevFolderItems = item.split('/')[:-1]
         previousFolder = '/'.join(prevFolderItems)
-        print(previousFolder)
         if not os.path.exists(previousFolder):            
             size = len(previousFolder)
             size = bin(size)[2:].zfill(32)
@@ -192,6 +195,7 @@ def handleSendFileUpdate(file, conn):
     
     client_socket.send('FINISHED'.encode())
 
+
 def listFiles(directory):
     result = [y for x in os.walk(directory) for y in glob(os.path.join(x[0], '*.*'))]
     dir_list = []
@@ -204,6 +208,7 @@ def listFiles(directory):
             elif len(hierarchy) > 1:
                 dir_list.append(hierarchy)
     return dir_list
+
 
 # This function preserves the / mand does not tokenize
 def listFiles2(directory):
@@ -218,6 +223,7 @@ def listFiles2(directory):
             elif len(hierarchy) > 1:
                 dir_list.append('/'.join(hierarchy))
     return dir_list
+
 
 if __name__ == '__main__':
     server_name = input('Input the server IP address/name: ')
@@ -250,8 +256,6 @@ if __name__ == '__main__':
 
     client_socket.send('01'.encode())
     handleSyncSendFiles(dir_list, client_socket)
-
-    # exit(0)
 
     dir_list = listFiles2(current_dir)
 

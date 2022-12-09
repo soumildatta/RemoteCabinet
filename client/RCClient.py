@@ -10,6 +10,7 @@ server_port = 12000
 packet_size = 1024
 current_dir = './'
 
+# List contains files received from the server and not manually created in the directory
 syncedFiles = []
 
 # Calculate the file modification times
@@ -18,7 +19,6 @@ def calcNewModTimes(file_list):
     for filename in file_list:
         if os.path.exists(filename) and filename != 'RCClient.py':
             newModTimes[filename] = os.stat(filename).st_mtime
-
     return newModTimes
 
 # Send client files to server for initial synchronization
@@ -56,6 +56,7 @@ def handleSyncSendFiles(fileList, client_socket):
             client_socket.send(size.encode())
             client_socket.send(file.encode())
 
+            # encode filesize as 32 bit binary
             filename = os.path.join(directory, file)
             filesize = os.path.getsize(filename)
             filesize = bin(filesize)[2:].zfill(32)
@@ -169,6 +170,7 @@ def handleFileDeleteFromServer(conn):
         cmd, size = size.split('@')
         size = int(size, 2)
 
+        # Handle deletion of a folder recursively
         if cmd == 'FDEL':
             foldername = conn.recv(size).decode()
             if os.path.exists(foldername):
@@ -177,6 +179,7 @@ def handleFileDeleteFromServer(conn):
             else:
                 print(f'Deletion not possible because {foldername} not found')
 
+        # Handle a simple file deletion
         elif cmd == 'FILE':
             filename = conn.recv(size).decode()
             if os.path.exists(filename):
@@ -190,6 +193,7 @@ def handleSendFileUpdate(file, conn):
     file = file.split('/')
     # print(file)
 
+    # If the file is in a folder, handle sending the folder names
     if len(file) > 1 and file[-1] not in syncedFiles:
         for i in range(0, len(file) - 1):
             # Send folder name size and name
@@ -202,8 +206,8 @@ def handleSendFileUpdate(file, conn):
             client_socket.send(foldernameSize.encode())
             client_socket.send(foldername.encode())
         
+    # Send the file
     if file[-1] not in syncedFiles:
-    # if file not in syncedFiles:
         file = file[-1]
 
         print(f'Sending {file}')

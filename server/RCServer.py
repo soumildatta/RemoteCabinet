@@ -212,12 +212,9 @@ def handleSendFileUpdate(files, conn, addr):
                 else:
                     conn.send('NONE@0'.encode())
                 poppedFile = receivedFiles.pop(file, 'unknown')
-                print('here 1')
             else:
                 conn.send('NONE@1'.encode())
-                print('here 2')
                 continue
-                # print('You added a file manually in the server folder which is not yet supported by RemoteCabinet')
 
 def handleFileDeletion(conn):
     while True:
@@ -337,7 +334,6 @@ def clientHandler(conn, addr):
 
     while True:
         # Receive command for what to do
-        print('Listening for client command')
         command = conn.recv(2).decode()
 
         # RECEIVE FILES FROM CLIENT
@@ -374,10 +370,9 @@ if __name__ == '__main__':
     try:
         while True:
             conn, addr = server_socket.accept()
+            # Start a thread after a connection is received
             thread = threading.Thread(target=clientHandler, args=(conn, addr))
             thread.start()
-            #! TEMPPORARY 
-            # clientHandler(conn, addr)
     except KeyboardInterrupt:
         server_socket.close()
         print('Server has been stopped')

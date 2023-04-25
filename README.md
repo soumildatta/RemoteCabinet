@@ -21,3 +21,6 @@ Executing this program is fairly straightforward. Note that for this program to 
 2. Start the server with the command: python RCServer.py 3. In the case where the above command does not work, start the server with the command: python3 RCServer.py
 
 The RemoteCabinet client or server scripts can be terminated through a regular command-line keyboard interrupt (CTRL + C / CMD + C). A server will only shut down once all client have disconnected, even after a keyboard interrupt is initiated in the server.
+
+## Contributions to the Project
+Contributions to this project are very welcome. There is definitely room for improvement, and I welcome anyone to share their ideas or improve upon this project. You can create a new issue if you notice a problem or see room for improvement, or solve one of the existing issues. Solve an issue by creating a fork to the repository, and creating a pull request with the necessary fixes. 

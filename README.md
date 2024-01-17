@@ -18,7 +18,8 @@ RemoteCabinet was predominantly developed and tested on a MacBook Pro running ma
 Executing this program is fairly straightforward. Note that for this program to work, the server script must be started first on the server machine so that a client can connect to it. There are 3 steps to starting the server script:
 
 1. On the server machine, change directory to the folder containing the server script RCServer.py
-2. Start the server with the command: python RCServer.py 3. In the case where the above command does not work, start the server with the command: python3 RCServer.py
+2. Start the server with the command: python RCServer.py    
+3. In the case where the above command does not work, start the server with the command: python3 RCServer.py
 
 The RemoteCabinet client or server scripts can be terminated through a regular command-line keyboard interrupt (CTRL + C / CMD + C). A server will only shut down once all client have disconnected, even after a keyboard interrupt is initiated in the server.
 

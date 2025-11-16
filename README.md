@@ -15,13 +15,12 @@ RemoteCabinet was predominantly developed and tested on a MacBook Pro running ma
 
 ## Running RemoteCabinet
 
-Executing this program is fairly straightforward. Note that for this program to work, the server script must be started first on the server machine so that a client can connect to it. There are 3 steps to starting the server script:
+Executing this program is fairly straightforward. Note that for this program to work, the server script must be started first on the server machine so that a client can connect to it. The directory that contains the server script will serve as the base directory for your storage system. There are 2 steps to starting the server script:
 
-1. On the server machine, change directory to the folder containing the server script RCServer.py
-2. Start the server with the command: python RCServer.py    
-3. In the case where the above command does not work, start the server with the command: python3 RCServer.py
+1. On the server machine, change directory to the folder containing the server script RCServer.py. Alternatively, move __RCServer.py__ to the folder you want to use as the base directory for your storage system. 
+2. Start the server with: `python RCServer.py`  
 
-The RemoteCabinet client or server scripts can be terminated through a regular command-line keyboard interrupt (CTRL + C / CMD + C). A server will only shut down once all client have disconnected, even after a keyboard interrupt is initiated in the server.
+The RemoteCabinet client or server scripts can be terminated through a regular command-line keyboard interrupt (CTRL + C / CMD + C). A server will only shut down once all client have disconnected to prevent potential issues, even after a keyboard interrupt is initiated in the server. 
 
 ## Contributions to the Project
-Contributions to this project are very welcome. There is definitely room for improvement, and I welcome anyone to share their ideas or improve upon this project. You can create a new issue if you notice a problem or see room for improvement, or solve one of the existing issues. Solve an issue by creating a fork to the repository, and creating a pull request with the necessary fixes. 
+Contributions to this project are very welcome. There is definitely room for improvement, and I welcome anyone to share their ideas or improve upon this project. You can create a new issue if you notice a problem or see room for improvement, or solve one of the existing issues.

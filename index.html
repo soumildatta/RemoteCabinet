@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>RemoteCabinet | Local-first personal cloud</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="RemoteCabinet is a local-first, self-hosted sync and backup tool that lets you own your storage and share files across your devices without third-party clouds."
+  />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="assets/rc-logo.svg" />
+
+  <!-- Optional: clean, modern font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#top" class="brand">
+        <img src="assets/rc-logo.svg" alt="RemoteCabinet logo" class="brand-logo" />
+        <span class="brand-text">
+          <span class="brand-name">RemoteCabinet</span>
+          <span class="brand-tagline">Local-first personal cloud</span>
+        </span>
+      </a>
+
+      <button class="nav-toggle" aria-label="Toggle navigation" id="navToggle">
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav class="nav" id="siteNav">
+        <a href="#why">Why</a>
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#usage">Get started</a>
+        <a href="#faq">FAQ</a>
+        <a
+          href="https://github.com/soumildatta/RemoteCabinet"
+          class="nav-cta"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <h1>Self-hosted syncing for people who care about their data.</h1>
+          <p class="hero-subtitle">
+            <strong>RemoteCabinet</strong> is a lightweight, local-first file sync and backup
+            tool. Run a tiny server on your machine or home lab, connect with the CLI, and keep
+            your files in sync across devices – without handing them to a third-party cloud.
+          </p>
+
+          <div class="hero-actions">
+            <a
+              href="https://github.com/soumildatta/RemoteCabinet"
+              class="btn btn-primary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on GitHub
+            </a>
+            <a href="#usage" class="btn btn-secondary">
+              Get started
+            </a>
+          </div>
+
+          <div class="hero-meta">
+            <span class="pill">Local-first</span>
+            <span class="pill">Self-hosted</span>
+            <span class="pill">CLI-driven</span>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-card">
+            <img
+              src="assets/rc-hero-illustration.svg"
+              alt="Diagram of RemoteCabinet server and clients"
+              class="hero-illustration"
+            />
+            <div class="hero-terminal">
+              <div class="term-header">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+                <span class="term-title">remote-cabinet ~</span>
+              </div>
+              <pre class="term-body"><code>$ rc server start
+Listening on localhost:4000
+
+$ rc connect --host 192.168.1.10
+Connected ✓
+
+$ rc sync ~/Projects
+Sync complete: 24 files updated</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why -->
+    <section class="section" id="why">
+      <div class="container">
+        <h2>Why build something local like this?</h2>
+        <p class="section-intro">
+          Most file sync tools assume you are fine with a remote cloud owning your storage.
+          <strong>RemoteCabinet flips that model.</strong> It treats your own machine as the
+          cabinet, and gives you a simple protocol and CLI to open that cabinet from your other
+          devices.
+        </p>
+
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>Own your storage</h3>
+            <p>
+              Every file lives on hardware you control. There is no dependency on an external
+              provider, no opaque retention policies, and no background data mining.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Stay close to the metal</h3>
+            <p>
+              RemoteCabinet is small and focused. You get a straightforward server and a CLI
+              client, designed for LANs and home labs, without heavyweight dashboards or
+              background daemons you do not understand.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Made for developers & tinkerers</h3>
+            <p>
+              Because it is implemented in Python and lives on GitHub, you can read the code,
+              extend the protocol, and integrate it into your own tooling and automations.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section section-alt" id="features">
+      <div class="container">
+        <h2>What RemoteCabinet does</h2>
+        <p class="section-intro">
+          At its core, RemoteCabinet is a <strong>personal sync and backup service</strong>.
+          One machine runs the server; other machines connect as clients, push and pull files,
+          and stay in sync.
+        </p>
+
+        <div class="grid grid-3 features-grid">
+          <article class="feature">
+            <span class="feature-icon">📁</span>
+            <h3>File sync & backup</h3>
+            <p>
+              Keep a chosen directory mirrored between your local machine and your RemoteCabinet
+              server. Use it as a simple backup destination or a shared project workspace.
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-icon">🔗</span>
+            <h3>Simple network protocol</h3>
+            <p>
+              A focused client–server protocol handles listing, uploading, downloading, and
+              updating files, without the complexity of a full distributed filesystem.
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-icon">🛠️</span>
+            <h3>CLI-first workflow</h3>
+            <p>
+              RemoteCabinet is controlled via the command line, making it ideal for terminals,
+              SSH sessions, scripts, cron jobs, and automated backups.
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-icon">🛡️</span>
+            <h3>Local trust model</h3>
+            <p>
+              Because the server runs in your own environment, you can integrate system-level
+              security: firewalls, VPNs, SSH tunnels, and OS permissions.
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-icon">⚙️</span>
+            <h3>Hackable & extensible</h3>
+            <p>
+              The codebase is structured for experimentation. Extend request types, add
+              metadata, or plug in your own authentication and sync policies.
+            </p>
+          </article>
+
+          <article class="feature">
+            <span class="feature-icon">💡</span>
+            <h3>Great for learning</h3>
+            <p>
+              RemoteCabinet is also a teaching tool: it demonstrates how to design a custom
+              protocol, build a networked application, and reason about sync semantics.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section" id="how">
+      <div class="container">
+        <h2>How RemoteCabinet works</h2>
+        <p class="section-intro">
+          The architecture is intentionally small: a single server process, multiple CLI
+          clients, and a clear separation between local folders and the remote cabinet.
+        </p>
+
+        <div class="how-grid">
+          <div class="how-steps">
+            <ol>
+              <li>
+                <strong>Start the server</strong><br />
+                Run the RemoteCabinet server on a machine that has the storage you want to use
+                as your cabinet.
+              </li>
+              <li>
+                <strong>Connect from your client</strong><br />
+                From another machine on your network, run the client and point it to your
+                server’s host and port.
+              </li>
+              <li>
+                <strong>Sync your folders</strong><br />
+                Choose a local directory to sync. The client compares file states and transfers
+                what is missing or outdated.
+              </li>
+              <li>
+                <strong>Automate if you want</strong><br />
+                Wrap commands in scripts or cron jobs to turn RemoteCabinet into a scheduled
+                backup or project mirror.
+              </li>
+            </ol>
+          </div>
+
+          <div class="how-diagram">
+            <img
+              src="assets/rc-hero-illustration.svg"
+              alt="RemoteCabinet client–server architecture"
+            />
+            <p class="diagram-caption">
+              One server, multiple clients. Your cabinet lives where your storage and trust are.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Usage / Quick start -->
+    <section class="section section-alt" id="usage">
+      <div class="container">
+        <h2>Get started in a few commands</h2>
+        <p class="section-intro">
+          Once you have cloned the repository, starting a RemoteCabinet instance is a
+          straightforward Python workflow.
+        </p>
+
+        <div class="usage-grid">
+          <div class="usage-step">
+            <h3>1. Clone the project</h3>
+            <pre><code>git clone https://github.com/soumildatta/RemoteCabinet.git
+cd RemoteCabinet</code></pre>
+          </div>
+
+          <div class="usage-step">
+            <h3>2. Start the server</h3>
+            <pre><code># Example: run the server on port 4000
+python RCServer.py --host 0.0.0.0 --port 4000 \
+  --root /path/to/your/cabinet</code></pre>
+          </div>
+
+          <div class="usage-step">
+            <h3>3. Connect a client</h3>
+            <pre><code># From another machine on the same network
+python RCClient.py --host 192.168.1.10 --port 4000
+
+# Upload or download files and folders
+# (Exact commands may vary based on the CLI in the repo)</code></pre>
+          </div>
+        </div>
+
+        <p class="usage-note">
+          The GitHub repository contains full instructions and examples. Use this website as a
+          conceptual overview; consult the README for up-to-date installation details and
+          command-line options.
+        </p>
+      </div>
+    </section>
+
+    <!-- Use cases -->
+    <section class="section">
+      <div class="container">
+        <h2>Where RemoteCabinet fits</h2>
+        <div class="grid grid-3">
+          <article class="card">
+            <h3>Home lab storage</h3>
+            <p>
+              Run RemoteCabinet on a small home server or NAS. Use your laptop and desktop as
+              clients to sync project folders and important documents.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Research & coding</h3>
+            <p>
+              Mirror experiments, code, or notes between a workstation and a laptop without
+              involving third-party sync services.
+            </p>
+          </article>
+
+          <article class="card">
+            <h3>Teaching & demos</h3>
+            <p>
+              Use RemoteCabinet as a concrete example when teaching networking, protocols, or
+              local-first application design.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section section-alt" id="faq">
+      <div class="container">
+        <h2>Frequently asked questions</h2>
+        <div class="faq">
+          <details>
+            <summary>Is RemoteCabinet a replacement for mainstream cloud storage?</summary>
+            <p>
+              Not directly. RemoteCabinet is more like a personal lab tool: it is small,
+              understandable, and focused on local-first workflows. You can use it alongside
+              cloud providers or instead of them, depending on your needs.
+            </p>
+          </details>
+
+          <details>
+            <summary>Do I need a public IP address?</summary>
+            <p>
+              No. RemoteCabinet works perfectly inside a local network or VPN. If you want to
+              reach it from outside, you can expose the server yourself (for example via SSH
+              tunneling, port forwarding, or a reverse proxy), keeping full control.
+            </p>
+          </details>
+
+          <details>
+            <summary>Is it secure?</summary>
+            <p>
+              The security model is intentionally transparent: the server runs on your hardware
+              and inside your network. You can combine it with TLS, firewalls, and OS-level
+              permissions. As with any self-hosted service, you should review the code and
+              deployment setup for your environment.
+            </p>
+          </details>
+
+          <details>
+            <summary>Can I extend it?</summary>
+            <p>
+              Yes. The project is on GitHub, and the code is structured to be hackable. You can
+              add new commands, enhance the protocol, or adapt the client for your own custom
+              workflows.
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-left">
+        <span class="footer-logo">🗄️</span>
+        <span>
+          RemoteCabinet is a local-first sync and backup tool.
+        </span>
+      </div>
+      <div class="footer-right">
+        <span>
+          Developed and maintained by
+          <a href="https://soumildatta.github.io" target="_blank" rel="noopener noreferrer">
+            Soumil Datta
+          </a>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

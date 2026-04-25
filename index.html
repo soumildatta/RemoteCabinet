@@ -40,6 +40,7 @@
         <a href="#features">Features</a>
         <a href="#how">How it works</a>
         <a href="#usage">Get started</a>
+        <a href="#team">Team</a>
         <a href="#faq">FAQ</a>
         <a
           href="https://github.com/soumildatta/RemoteCabinet"
@@ -343,8 +344,45 @@ python RCClient.py --host 192.168.1.10 --port 4000
       </div>
     </section>
 
+    <section class="section section-alt" id="team">
+      <div class="container">
+        <h2>Built by Real Users</h2>
+        <p class="section-intro">
+          RemoteCabinet started as a project to solve personal data ownership on local environments. It is maintained and evolved by a small team, and is fully open-source.
+        </p>
+
+        <div class="grid grid-3 team-grid">
+          <article class="card team-card">
+            <!-- <div class="team-avatar">SD</div> -->
+            <h3><a href="https://soumildatta.github.io" target="_blank" rel="noopener noreferrer">Soumil Datta</a></h3>
+            <p class="team-role">AI Safety/Security Researcher</p>
+            <p class="team-bio">
+              PhD student reserching Robot AI safety and security. Originally built RemoteCabinet to act as a personal local-first storage solution.
+            </p>
+          </article>
+
+          <article class="card team-card">
+            <!-- <div class="team-avatar">AM</div> -->
+            <h3><a href="https://michaeldavis.github.io" target="_blank" rel="noopener noreferrer">Michael Davis</a></h3>
+            <p class="team-role">Data Technician</p>
+            <p class="team-bio">
+              A networks guru, cat hoarder, and Nioh speedrunner. 
+            </p>
+          </article>
+
+          <article class="card team-card">
+            <!-- <div class="team-avatar">DB</div> -->
+            <h3><a href="https://sukhleenk.github.io" target="_blank" rel="noopener noreferrer">Sukhleen Kaur</a></h3>
+            <p class="team-role">Software Engineer</p>
+            <p class="team-bio">
+              Software engineer with diverse industry experience. Loves building tools that empower users to take control of their data.
+          </article>
+        </div>
+      </div>
+    </section>
+
     <!-- FAQ -->
-    <section class="section section-alt" id="faq">
+    <section class="section" id="faq">
       <div class="container">
         <h2>Frequently asked questions</h2>
         <div class="faq">
@@ -377,13 +415,20 @@ python RCClient.py --host 192.168.1.10 --port 4000
           </details>
 
           <details>
+            <summary>How do the real users use it?</summary>
+            <p>
+              The team behind RemoteCabinet uses it for syncing project folders between a home server and their laptops, as well as for scheduled backups of important documents. They generally run the serve on a small home server, which may be a Raspberry Pi, or an old desktop/laptop repurposed as a server. The clients are used on their main work machines, and they have scripts set up to automate regular syncs of key folders.
+            </p>
+          </details>
+
+          <!-- <details>
             <summary>Can I extend it?</summary>
             <p>
               Yes. The project is on GitHub, and the code is structured to be hackable. You can
               add new commands, enhance the protocol, or adapt the client for your own custom
               workflows.
             </p>
-          </details>
+          </details> -->
         </div>
       </div>
     </section>

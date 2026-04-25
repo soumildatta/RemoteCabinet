@@ -626,3 +626,60 @@ body {
     font-size: 0.76rem;
   }
 }
+
+
+
+
+
+
+
+
+/* Team Section Styles */
+.team-grid {
+  margin-top: 3rem;
+}
+
+.team-card {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  transition: transform 0.2s ease;
+}
+
+.team-card:hover {
+  transform: translateY(-5px);
+}
+
+.team-avatar {
+  width: 80px;
+  height: 80px;
+  background: var(--primary-color, #2563eb);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.team-role {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  color: var(--accent-color, #64748b);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.team-bio {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #475569;
+}
+
+/* team section styles. make the links bold on hover and force them to be white */
+.team-card h3 a {
+  color: white;
+  font-weight: 700;
+}
